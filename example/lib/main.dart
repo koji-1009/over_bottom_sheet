@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:over_bottom_sheet/over_bottom_sheet.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,30 +22,34 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.blue,
         brightness: Brightness.dark,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class MyHomePage extends StatelessWidget {
+  const MyHomePage({super.key});
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text('Flutter Demo Home Page'),
       ),
-      body: const Center(
-        child: Text(
-          'You have pushed the button this many times:',
+      body: OverBottomSheet(
+        header: const Center(
+          child: Text('header'),
+        ),
+        panel: ListView.builder(
+          itemBuilder: (context, index) => ListTile(
+            title: Text('$index'),
+          ),
+        ),
+        child: Container(
+          color: Colors.indigo,
+          child: const Center(
+            child: Text('main area'),
+          ),
         ),
       ),
     );
