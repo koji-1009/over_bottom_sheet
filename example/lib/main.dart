@@ -37,6 +37,13 @@ class MyHomePage extends StatelessWidget {
         title: const Text('Flutter Demo Home Page'),
       ),
       body: OverBottomSheet(
+        clipBehavior: Clip.hardEdge,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(32),
+            topRight: Radius.circular(32),
+          ),
+        ),
         header: const Center(
           child: Text('header'),
         ),
