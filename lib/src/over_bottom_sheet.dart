@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:over_bottom_sheet/src/over_bottom_sheet_controller.dart';
 
 typedef HeaderBuilder = Widget Function(
   BuildContext context,
@@ -18,6 +19,7 @@ class OverBottomSheet extends StatefulWidget {
     this.shape,
     this.clipBehavior,
     this.constraints,
+    this.controller,
     this.headerBuilder,
   });
 
@@ -34,6 +36,7 @@ class OverBottomSheet extends StatefulWidget {
   final Clip? clipBehavior;
   final BoxConstraints? constraints;
 
+  final OverBottomSheetController? controller;
   final HeaderBuilder? headerBuilder;
 
   @override
@@ -41,7 +44,10 @@ class OverBottomSheet extends StatefulWidget {
 }
 
 class _OverlappedPanelState extends State<OverBottomSheet> {
-  final _controller = ValueNotifier(0.0);
+  OverBottomSheetController? _innerController;
+
+  OverBottomSheetController get _controller =>
+      widget.controller ?? _innerController!;
 
   double get _maxDistance =>
       widget.headerHeight + widget.contentHeight - widget.minHeight;
@@ -53,10 +59,9 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
       ? ValueListenableBuilder<double>(
           valueListenable: _controller,
           builder: (context, value, child) {
-            final ratio = 1 - value / _maxDistance;
             return _builder(
               context,
-              ratio,
+              value,
             );
           },
         )
@@ -64,12 +69,16 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
 
   @override
   void initState() {
+    if (widget.controller == null) {
+      _innerController = OverBottomSheetController();
+    }
+
     super.initState();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _innerController?.dispose();
 
     super.dispose();
   }
@@ -89,7 +98,7 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
             ValueListenableBuilder<double>(
               valueListenable: _controller,
               builder: (context, value, child) => Transform.translate(
-                offset: Offset(0, value),
+                offset: Offset(0, (1 - value) * _maxDistance),
                 child: child,
               ),
               child: GestureDetector(
@@ -136,14 +145,7 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   void _moveSheet({
     required double dy,
   }) {
-    final newPosition = _controller.value + dy;
-
-    if (newPosition <= 0) {
-      _controller.value = 0;
-    } else if (newPosition >= _maxDistance) {
-      _controller.value = _maxDistance;
-    } else {
-      _controller.value = newPosition;
-    }
+    final ratio = _controller.value - dy / _maxDistance;
+    _controller.updateRatio(ratio);
   }
 }

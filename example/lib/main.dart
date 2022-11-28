@@ -27,8 +27,22 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final _controller = OverBottomSheetController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +61,29 @@ class MyHomePage extends StatelessWidget {
         contentHeight: 480,
         headerHeight: 60,
         minHeight: 60,
+        controller: _controller,
         headerBuilder: (context, ratio) => Center(
-          child: Text('ratio: $ratio'),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ValueListenableBuilder<double>(
+                valueListenable: _controller,
+                builder: (context, value, child) => IconButton(
+                  onPressed: () {
+                    if (value <= 0.5) {
+                      _controller.open();
+                    } else {
+                      _controller.close();
+                    }
+                  },
+                  icon: value >= 0.5
+                      ? const Icon(Icons.expand_more)
+                      : const Icon(Icons.expand_less),
+                ),
+              ),
+              Text('ratio: ${ratio.toStringAsFixed(3)}'),
+            ],
+          ),
         ),
         content: ListView.builder(
           itemBuilder: (context, index) => ListTile(
