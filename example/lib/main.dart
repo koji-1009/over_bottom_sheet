@@ -44,10 +44,13 @@ class MyHomePage extends StatelessWidget {
             topRight: Radius.circular(32),
           ),
         ),
-        header: const Center(
-          child: Text('header'),
+        contentHeight: 480,
+        headerHeight: 60,
+        minHeight: 60,
+        headerBuilder: (context, ratio) => Center(
+          child: Text('ratio: $ratio'),
         ),
-        panel: ListView.builder(
+        content: ListView.builder(
           itemBuilder: (context, index) => ListTile(
             title: Text('$index'),
           ),

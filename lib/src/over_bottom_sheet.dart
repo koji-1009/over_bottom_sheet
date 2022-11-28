@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
 
+typedef HeaderBuilder = Widget Function(
+  BuildContext context,
+  double ratio,
+);
+
 class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
     required this.child,
-    required this.panel,
+    required this.content,
+    required this.headerHeight,
+    required this.contentHeight,
+    required this.minHeight,
     this.backgroundColor,
     this.elevation,
     this.shape,
     this.clipBehavior,
     this.constraints,
-    this.header,
-    this.topSpace = 60,
-    this.headerHeight = 60,
+    this.headerBuilder,
   });
 
   final Widget child;
-  final Widget panel;
+  final Widget content;
+
+  final double headerHeight;
+  final double contentHeight;
+  final double minHeight;
 
   final Color? backgroundColor;
   final double? elevation;
@@ -24,23 +34,36 @@ class OverBottomSheet extends StatefulWidget {
   final Clip? clipBehavior;
   final BoxConstraints? constraints;
 
-  final double topSpace;
-  final double headerHeight;
-  final Widget? header;
+  final HeaderBuilder? headerBuilder;
 
   @override
   State<OverBottomSheet> createState() => _OverlappedPanelState();
 }
 
 class _OverlappedPanelState extends State<OverBottomSheet> {
-  late ValueNotifier<double> _controller;
+  final _controller = ValueNotifier(0.0);
+
+  double get _maxDistance =>
+      widget.headerHeight + widget.contentHeight - widget.minHeight;
+
+  HeaderBuilder get _builder =>
+      widget.headerBuilder ?? (context, ratio) => const SizedBox.shrink();
+
+  Widget get _header => widget.headerBuilder != null
+      ? ValueListenableBuilder<double>(
+          valueListenable: _controller,
+          builder: (context, value, child) {
+            final ratio = 1 - value / _maxDistance;
+            return _builder(
+              context,
+              ratio,
+            );
+          },
+        )
+      : const SizedBox.shrink();
 
   @override
   void initState() {
-    _controller = ValueNotifier(
-      widget.topSpace,
-    );
-
     super.initState();
   }
 
@@ -55,12 +78,8 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final sheetHeight = constraints.maxHeight - widget.topSpace;
-        final bottomEnd = sheetHeight - widget.headerHeight;
-
-        _validateBounds(
-          newPosition: _controller.value,
-          bottomEnd: bottomEnd,
+        _moveSheet(
+          dy: 0,
         );
 
         return Stack(
@@ -75,11 +94,8 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
               ),
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
-                  final newPosition = _controller.value + details.delta.dy;
-
-                  _validateBounds(
-                    newPosition: newPosition,
-                    bottomEnd: bottomEnd,
+                  _moveSheet(
+                    dy: details.delta.dy,
                   );
                 },
                 child: BottomSheet(
@@ -92,17 +108,17 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                   constraints: widget.constraints,
                   onClosing: () {},
                   builder: (context) => SizedBox(
-                    height: sheetHeight,
+                    height: widget.headerHeight + widget.contentHeight,
                     child: Column(
                       children: [
                         SizedBox(
                           height: widget.headerHeight,
                           width: double.infinity,
-                          child: widget.header,
+                          child: _header,
                         ),
                         Expanded(
                           child: SizedBox.expand(
-                            child: widget.panel,
+                            child: widget.content,
                           ),
                         ),
                       ],
@@ -117,14 +133,15 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
     );
   }
 
-  void _validateBounds({
-    required double newPosition,
-    required double bottomEnd,
+  void _moveSheet({
+    required double dy,
   }) {
-    if (newPosition <= widget.topSpace) {
-      _controller.value = widget.topSpace;
-    } else if (newPosition >= bottomEnd) {
-      _controller.value = bottomEnd;
+    final newPosition = _controller.value + dy;
+
+    if (newPosition <= 0) {
+      _controller.value = 0;
+    } else if (newPosition >= _maxDistance) {
+      _controller.value = _maxDistance;
     } else {
       _controller.value = newPosition;
     }
