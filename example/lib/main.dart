@@ -58,9 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
             topRight: Radius.circular(32),
           ),
         ),
-        contentHeight: 480,
-        headerHeight: 60,
-        minHeight: 60,
+        constraints: const BoxConstraints(
+          maxHeight: 600,
+          minHeight: 60,
+          maxWidth: 560,
+          minWidth: 0,
+        ),
         controller: _controller,
         headerBuilder: (context, ratio) => Center(
           child: Row(
