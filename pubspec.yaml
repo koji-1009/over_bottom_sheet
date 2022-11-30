@@ -1,7 +1,7 @@
 name: over_bottom_sheet
 description: A new Flutter package project.
 version: 0.0.1
-homepage:
+homepage: https://github.com/koji-1009/over_bottom_sheet
 
 environment:
   sdk: '>=2.17.0 <3.0.0'
