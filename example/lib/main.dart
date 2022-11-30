@@ -58,11 +58,9 @@ class _MyHomePageState extends State<MyHomePage> {
             topRight: Radius.circular(32),
           ),
         ),
-        constraints: const BoxConstraints(
-          maxHeight: 600,
-          minHeight: 60,
-          maxWidth: 560,
-          minWidth: 0,
+        sizeOption: const OverBottomSheetSizeOption.mix(
+          maxHeight: 0.8,
+          minHeight: 120,
         ),
         controller: _controller,
         headerBuilder: (context, ratio) => Center(

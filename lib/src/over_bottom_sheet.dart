@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet_controller.dart';
+import 'package:over_bottom_sheet/src/over_bottom_sheet_option.dart';
 
 typedef HeaderBuilder = Widget Function(
   BuildContext context,
@@ -11,7 +12,7 @@ class OverBottomSheet extends StatefulWidget {
     super.key,
     required this.child,
     required this.content,
-    required this.constraints,
+    required this.sizeOption,
     this.backgroundColor,
     this.elevation,
     this.shape,
@@ -22,7 +23,7 @@ class OverBottomSheet extends StatefulWidget {
 
   final Widget child;
   final Widget content;
-  final BoxConstraints constraints;
+  final OverBottomSheetSizeOption sizeOption;
 
   final Color? backgroundColor;
   final double? elevation;
@@ -41,9 +42,6 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
 
   OverBottomSheetController get _controller =>
       widget.controller ?? _innerController!;
-
-  double get _maxDistance =>
-      widget.constraints.maxHeight - widget.constraints.minHeight;
 
   HeaderBuilder get _builder =>
       widget.headerBuilder ?? (context, ratio) => const SizedBox.shrink();
@@ -76,7 +74,22 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final maxHeight = widget.sizeOption.when(
+          fix: (maxHeight, _, __, ___) => maxHeight,
+          ratio: (maxHeight, _, __, ___) => constraints.maxHeight * maxHeight,
+          mix: (maxHeight, _, __, ___) =>
+              maxHeight > 1.0 ? maxHeight : constraints.maxHeight * maxHeight,
+        );
+        final minHeight = widget.sizeOption.when(
+          fix: (_, minHeight, __, ___) => minHeight,
+          ratio: (_, minHeight, __, ___) => constraints.maxHeight * minHeight,
+          mix: (_, minHeight, __, ___) =>
+              minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
+        );
+        final distance = maxHeight - minHeight;
+
         _moveSheet(
+          distance: distance,
           dy: 0,
         );
 
@@ -87,12 +100,13 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
             ValueListenableBuilder<double>(
               valueListenable: _controller,
               builder: (context, value, child) => Transform.translate(
-                offset: Offset(0, (1 - value) * _maxDistance),
+                offset: Offset(0, (1 - value) * distance),
                 child: child,
               ),
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
                   _moveSheet(
+                    distance: distance,
                     dy: details.delta.dy,
                   );
                 },
@@ -103,13 +117,27 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                   elevation: widget.elevation,
                   shape: widget.shape,
                   clipBehavior: widget.clipBehavior,
-                  constraints: BoxConstraints(
-                    maxWidth: widget.constraints.maxWidth,
-                    minWidth: widget.constraints.minWidth,
+                  constraints: widget.sizeOption.when(
+                    fix: (_, __, maxWidth, minWidth) => BoxConstraints(
+                      maxWidth: maxWidth,
+                      minWidth: minWidth,
+                    ),
+                    ratio: (_, __, maxWidth, minWidth) => BoxConstraints(
+                      maxWidth: constraints.maxWidth * maxWidth,
+                      minWidth: constraints.maxWidth * minWidth,
+                    ),
+                    mix: (_, __, maxWidth, minWidth) => BoxConstraints(
+                      maxWidth: maxWidth > 1.0
+                          ? maxWidth
+                          : constraints.maxWidth * maxWidth,
+                      minWidth: minHeight > 1.0
+                          ? minHeight
+                          : constraints.maxWidth * minWidth,
+                    ),
                   ),
                   onClosing: () {},
                   builder: (context) => SizedBox(
-                    height: widget.constraints.maxHeight,
+                    height: maxHeight,
                     child: Column(
                       children: [
                         SizedBox(
@@ -134,9 +162,10 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   }
 
   void _moveSheet({
+    required double distance,
     required double dy,
   }) {
-    final ratio = _controller.value - dy / _maxDistance;
+    final ratio = _controller.value - dy / distance;
     _controller.updateRatio(ratio);
   }
 }
