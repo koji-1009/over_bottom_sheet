@@ -11,6 +11,7 @@ class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
     required this.child,
+    required this.headerBuilder,
     required this.contentBuilder,
     required this.sizeOption,
     this.backgroundColor,
@@ -18,10 +19,10 @@ class OverBottomSheet extends StatefulWidget {
     this.shape,
     this.clipBehavior,
     this.controller,
-    this.headerBuilder,
   });
 
   final Widget child;
+  final SheetWidgetBuilder headerBuilder;
   final SheetWidgetBuilder contentBuilder;
   final OverBottomSheetSizeOption sizeOption;
 
@@ -31,7 +32,6 @@ class OverBottomSheet extends StatefulWidget {
   final Clip? clipBehavior;
 
   final OverBottomSheetController? controller;
-  final SheetWidgetBuilder? headerBuilder;
 
   @override
   State<OverBottomSheet> createState() => _OverlappedPanelState();
@@ -43,24 +43,17 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   OverBottomSheetController get _controller =>
       widget.controller ?? _innerController!;
 
-  SheetWidgetBuilder get _builder =>
-      widget.headerBuilder ?? (context, ratio) => const SizedBox.shrink();
-
   Widget get _header => ValueListenableBuilder<double>(
         valueListenable: _controller,
-        builder: (context, value, child) => _builder(
-          context,
-          value,
-        ),
+        builder: (context, value, child) =>
+            widget.headerBuilder(context, value),
       );
 
   Widget get _content => ValueListenableBuilder<double>(
-    valueListenable: _controller,
-    builder: (context, value, child) => widget.contentBuilder(
-      context,
-      value,
-    ),
-  );
+        valueListenable: _controller,
+        builder: (context, value, child) =>
+            widget.contentBuilder(context, value),
+      );
 
   @override
   void initState() {
@@ -94,8 +87,20 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
           mix: (_, minHeight, __, ___) =>
               minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
         );
-        final distance = maxHeight - minHeight;
+        final maxWidth = widget.sizeOption.when(
+          fix: (_, __, maxWidth, ___) => maxWidth,
+          ratio: (_, __, maxWidth, ___) => constraints.maxWidth * maxWidth,
+          mix: (_, __, maxWidth, ___) =>
+              maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
+        );
+        final minWidth = widget.sizeOption.when(
+          fix: (_, __, ___, minWidth) => minWidth,
+          ratio: (_, __, ___, minWidth) => constraints.maxHeight * minWidth,
+          mix: (_, __, ___, minWidth) =>
+              minWidth > 1.0 ? minWidth : constraints.maxHeight * minWidth,
+        );
 
+        final distance = maxHeight - minHeight;
         _moveSheet(
           distance: distance,
           dy: 0,
@@ -125,40 +130,20 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                   elevation: widget.elevation,
                   shape: widget.shape,
                   clipBehavior: widget.clipBehavior,
-                  constraints: widget.sizeOption.when(
-                    fix: (_, __, maxWidth, minWidth) => BoxConstraints(
-                      maxWidth: maxWidth,
-                      minWidth: minWidth,
-                    ),
-                    ratio: (_, __, maxWidth, minWidth) => BoxConstraints(
-                      maxWidth: constraints.maxWidth * maxWidth,
-                      minWidth: constraints.maxWidth * minWidth,
-                    ),
-                    mix: (_, __, maxWidth, minWidth) => BoxConstraints(
-                      maxWidth: maxWidth > 1.0
-                          ? maxWidth
-                          : constraints.maxWidth * maxWidth,
-                      minWidth: minHeight > 1.0
-                          ? minHeight
-                          : constraints.maxWidth * minWidth,
-                    ),
+                  constraints: BoxConstraints(
+                    maxHeight: maxHeight,
+                    minHeight: 0.0,
+                    maxWidth: maxWidth,
+                    minWidth: minWidth,
                   ),
                   onClosing: () {},
-                  builder: (context) => SizedBox(
-                    height: maxHeight,
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: _header,
-                        ),
-                        Expanded(
-                          child: SizedBox.expand(
-                            child: _content,
-                          ),
-                        ),
-                      ],
-                    ),
+                  builder: (context) => Column(
+                    children: [
+                      _header,
+                      Expanded(
+                        child: _content,
+                      ),
+                    ],
                   ),
                 ),
               ),
