@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet_controller.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet_option.dart';
 
-typedef HeaderBuilder = Widget Function(
+typedef SheetWidgetBuilder = Widget Function(
   BuildContext context,
   double ratio,
 );
@@ -11,7 +11,7 @@ class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
     required this.child,
-    required this.content,
+    required this.contentBuilder,
     required this.sizeOption,
     this.backgroundColor,
     this.elevation,
@@ -22,7 +22,7 @@ class OverBottomSheet extends StatefulWidget {
   });
 
   final Widget child;
-  final Widget content;
+  final SheetWidgetBuilder contentBuilder;
   final OverBottomSheetSizeOption sizeOption;
 
   final Color? backgroundColor;
@@ -31,7 +31,7 @@ class OverBottomSheet extends StatefulWidget {
   final Clip? clipBehavior;
 
   final OverBottomSheetController? controller;
-  final HeaderBuilder? headerBuilder;
+  final SheetWidgetBuilder? headerBuilder;
 
   @override
   State<OverBottomSheet> createState() => _OverlappedPanelState();
@@ -43,7 +43,7 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   OverBottomSheetController get _controller =>
       widget.controller ?? _innerController!;
 
-  HeaderBuilder get _builder =>
+  SheetWidgetBuilder get _builder =>
       widget.headerBuilder ?? (context, ratio) => const SizedBox.shrink();
 
   Widget get _header => ValueListenableBuilder<double>(
@@ -53,6 +53,14 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
           value,
         ),
       );
+
+  Widget get _content => ValueListenableBuilder<double>(
+    valueListenable: _controller,
+    builder: (context, value, child) => widget.contentBuilder(
+      context,
+      value,
+    ),
+  );
 
   @override
   void initState() {
@@ -146,7 +154,7 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                         ),
                         Expanded(
                           child: SizedBox.expand(
-                            child: widget.content,
+                            child: _content,
                           ),
                         ),
                       ],
