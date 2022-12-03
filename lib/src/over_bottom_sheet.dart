@@ -11,9 +11,11 @@ class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
     required this.child,
-    required this.headerBuilder,
-    required this.contentBuilder,
     required this.sizeOption,
+    this.header,
+    this.headerBuilder,
+    this.content,
+    this.contentBuilder,
     this.backgroundColor,
     this.elevation,
     this.shape,
@@ -22,9 +24,12 @@ class OverBottomSheet extends StatefulWidget {
   });
 
   final Widget child;
-  final SheetWidgetBuilder headerBuilder;
-  final SheetWidgetBuilder contentBuilder;
   final OverBottomSheetSizeOption sizeOption;
+
+  final Widget? header;
+  final SheetWidgetBuilder? headerBuilder;
+  final Widget? content;
+  final SheetWidgetBuilder? contentBuilder;
 
   final Color? backgroundColor;
   final double? elevation;
@@ -43,16 +48,22 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   OverBottomSheetController get _controller =>
       widget.controller ?? _innerController!;
 
-  Widget get _header => ValueListenableBuilder<double>(
+  Widget get _header =>
+      widget.header ??
+      ValueListenableBuilder<double>(
         valueListenable: _controller,
         builder: (context, value, child) =>
-            widget.headerBuilder(context, value),
+            widget.headerBuilder?.call(context, value) ??
+            const SizedBox.shrink(),
       );
 
-  Widget get _content => ValueListenableBuilder<double>(
+  Widget get _content =>
+      widget.content ??
+      ValueListenableBuilder<double>(
         valueListenable: _controller,
         builder: (context, value, child) =>
-            widget.contentBuilder(context, value),
+            widget.contentBuilder?.call(context, value) ??
+            const SizedBox.shrink(),
       );
 
   @override
