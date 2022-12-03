@@ -10,6 +10,7 @@ typedef SheetWidgetBuilder = Widget Function(
 class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
+    this.controller,
     required this.child,
     required this.sizeOption,
     this.header,
@@ -20,8 +21,9 @@ class OverBottomSheet extends StatefulWidget {
     this.elevation,
     this.shape,
     this.clipBehavior,
-    this.controller,
   });
+
+  final OverBottomSheetController? controller;
 
   final Widget child;
   final OverBottomSheetSizeOption sizeOption;
@@ -36,17 +38,15 @@ class OverBottomSheet extends StatefulWidget {
   final ShapeBorder? shape;
   final Clip? clipBehavior;
 
-  final OverBottomSheetController? controller;
-
   @override
   State<OverBottomSheet> createState() => _OverlappedPanelState();
 }
 
 class _OverlappedPanelState extends State<OverBottomSheet> {
-  OverBottomSheetController? _innerController;
+  final _innerController = OverBottomSheetController();
 
   OverBottomSheetController get _controller =>
-      widget.controller ?? _innerController!;
+      widget.controller ?? _innerController;
 
   Widget get _header =>
       widget.header ??
@@ -68,16 +68,12 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
 
   @override
   void initState() {
-    if (widget.controller == null) {
-      _innerController = OverBottomSheetController();
-    }
-
     super.initState();
   }
 
   @override
   void dispose() {
-    _innerController?.dispose();
+    _innerController.dispose();
 
     super.dispose();
   }
@@ -86,34 +82,10 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxHeight = widget.sizeOption.when(
-          fix: (maxHeight, _, __, ___) => maxHeight,
-          ratio: (maxHeight, _, __, ___) => constraints.maxHeight * maxHeight,
-          mix: (maxHeight, _, __, ___) =>
-              maxHeight > 1.0 ? maxHeight : constraints.maxHeight * maxHeight,
-        );
-        final minHeight = widget.sizeOption.when(
-          fix: (_, minHeight, __, ___) => minHeight,
-          ratio: (_, minHeight, __, ___) => constraints.maxHeight * minHeight,
-          mix: (_, minHeight, __, ___) =>
-              minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
-        );
-        final maxWidth = widget.sizeOption.when(
-          fix: (_, __, maxWidth, ___) => maxWidth,
-          ratio: (_, __, maxWidth, ___) => constraints.maxWidth * maxWidth,
-          mix: (_, __, maxWidth, ___) =>
-              maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
-        );
-        final minWidth = widget.sizeOption.when(
-          fix: (_, __, ___, minWidth) => minWidth,
-          ratio: (_, __, ___, minWidth) => constraints.maxHeight * minWidth,
-          mix: (_, __, ___, minWidth) =>
-              minWidth > 1.0 ? minWidth : constraints.maxHeight * minWidth,
-        );
-
-        final distance = maxHeight - minHeight;
+        final sheetConstraints = widget.sizeOption.boxConstraints(constraints);
+        final base = sheetConstraints.maxHeight - sheetConstraints.minHeight;
         _moveSheet(
-          distance: distance,
+          base: base,
           dy: 0,
         );
 
@@ -124,30 +96,18 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
             ValueListenableBuilder<double>(
               valueListenable: _controller,
               builder: (context, value, child) => Transform.translate(
-                offset: Offset(0, (1 - value) * distance),
+                offset: Offset(0, (1 - value) * base),
                 child: child,
               ),
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
                   _moveSheet(
-                    distance: distance,
+                    base: base,
                     dy: details.delta.dy,
                   );
                 },
                 child: BottomSheet(
-                  animationController: null,
-                  enableDrag: false,
-                  backgroundColor: widget.backgroundColor,
-                  elevation: widget.elevation,
-                  shape: widget.shape,
-                  clipBehavior: widget.clipBehavior,
-                  constraints: BoxConstraints(
-                    maxHeight: maxHeight,
-                    minHeight: 0.0,
-                    maxWidth: maxWidth,
-                    minWidth: minWidth,
-                  ),
-                  onClosing: () {},
+                  constraints: sheetConstraints,
                   builder: (context) => Column(
                     children: [
                       _header,
@@ -156,6 +116,13 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                       ),
                     ],
                   ),
+                  backgroundColor: widget.backgroundColor,
+                  elevation: widget.elevation,
+                  shape: widget.shape,
+                  clipBehavior: widget.clipBehavior,
+                  animationController: null,
+                  enableDrag: false,
+                  onClosing: () {},
                 ),
               ),
             ),
@@ -166,10 +133,35 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   }
 
   void _moveSheet({
-    required double distance,
+    required double base,
     required double dy,
   }) {
-    final ratio = _controller.value - dy / distance;
+    final ratio = _controller.value - dy / base;
     _controller.updateRatio(ratio);
   }
+}
+
+extension on OverBottomSheetSizeOption {
+  BoxConstraints boxConstraints(BoxConstraints constraints) => when(
+        fix: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
+          maxWidth: maxWidth,
+          minWidth: minWidth,
+          maxHeight: maxHeight,
+          minHeight: minHeight,
+        ),
+        ratio: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
+          maxWidth: constraints.maxWidth * maxWidth,
+          minWidth: constraints.maxWidth * minWidth,
+          maxHeight: constraints.maxHeight * maxHeight,
+          minHeight: constraints.maxHeight * minHeight,
+        ),
+        mix: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
+          maxWidth: maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
+          minWidth: minWidth > 1.0 ? minWidth : constraints.maxWidth * minWidth,
+          maxHeight:
+              maxHeight > 1.0 ? maxHeight : constraints.maxHeight * maxHeight,
+          minHeight:
+              minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
+        ),
+      );
 }

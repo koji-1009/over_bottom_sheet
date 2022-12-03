@@ -16,46 +16,46 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$OverBottomSheetSizeOption {
-  double get maxHeight => throw _privateConstructorUsedError;
-  double get minHeight => throw _privateConstructorUsedError;
   double get maxWidth => throw _privateConstructorUsedError;
   double get minWidth => throw _privateConstructorUsedError;
+  double get maxHeight => throw _privateConstructorUsedError;
+  double get minHeight => throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         fix,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         ratio,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         mix,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
     required TResult orElse(),
   }) =>
@@ -95,7 +95,7 @@ abstract class $OverBottomSheetSizeOptionCopyWith<$Res> {
       _$OverBottomSheetSizeOptionCopyWithImpl<$Res, OverBottomSheetSizeOption>;
   @useResult
   $Res call(
-      {double maxHeight, double minHeight, double maxWidth, double minWidth});
+      {double maxWidth, double minWidth, double maxHeight, double minHeight});
 }
 
 /// @nodoc
@@ -112,20 +112,12 @@ class _$OverBottomSheetSizeOptionCopyWithImpl<$Res,
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxHeight = null,
-    Object? minHeight = null,
     Object? maxWidth = null,
     Object? minWidth = null,
+    Object? maxHeight = null,
+    Object? minHeight = null,
   }) {
     return _then(_value.copyWith(
-      maxHeight: null == maxHeight
-          ? _value.maxHeight
-          : maxHeight // ignore: cast_nullable_to_non_nullable
-              as double,
-      minHeight: null == minHeight
-          ? _value.minHeight
-          : minHeight // ignore: cast_nullable_to_non_nullable
-              as double,
       maxWidth: null == maxWidth
           ? _value.maxWidth
           : maxWidth // ignore: cast_nullable_to_non_nullable
@@ -133,6 +125,14 @@ class _$OverBottomSheetSizeOptionCopyWithImpl<$Res,
       minWidth: null == minWidth
           ? _value.minWidth
           : minWidth // ignore: cast_nullable_to_non_nullable
+              as double,
+      maxHeight: null == maxHeight
+          ? _value.maxHeight
+          : maxHeight // ignore: cast_nullable_to_non_nullable
+              as double,
+      minHeight: null == minHeight
+          ? _value.minHeight
+          : minHeight // ignore: cast_nullable_to_non_nullable
               as double,
     ) as $Val);
   }
@@ -148,7 +148,7 @@ abstract class _$$_OverBottomSheetSizeOptionFixCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {double maxHeight, double minHeight, double maxWidth, double minWidth});
+      {double maxWidth, double minWidth, double maxHeight, double minHeight});
 }
 
 /// @nodoc
@@ -164,20 +164,12 @@ class __$$_OverBottomSheetSizeOptionFixCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxHeight = null,
-    Object? minHeight = null,
     Object? maxWidth = null,
     Object? minWidth = null,
+    Object? maxHeight = null,
+    Object? minHeight = null,
   }) {
     return _then(_$_OverBottomSheetSizeOptionFix(
-      maxHeight: null == maxHeight
-          ? _value.maxHeight
-          : maxHeight // ignore: cast_nullable_to_non_nullable
-              as double,
-      minHeight: null == minHeight
-          ? _value.minHeight
-          : minHeight // ignore: cast_nullable_to_non_nullable
-              as double,
       maxWidth: null == maxWidth
           ? _value.maxWidth
           : maxWidth // ignore: cast_nullable_to_non_nullable
@@ -185,6 +177,14 @@ class __$$_OverBottomSheetSizeOptionFixCopyWithImpl<$Res>
       minWidth: null == minWidth
           ? _value.minWidth
           : minWidth // ignore: cast_nullable_to_non_nullable
+              as double,
+      maxHeight: null == maxHeight
+          ? _value.maxHeight
+          : maxHeight // ignore: cast_nullable_to_non_nullable
+              as double,
+      minHeight: null == minHeight
+          ? _value.minHeight
+          : minHeight // ignore: cast_nullable_to_non_nullable
               as double,
     ));
   }
@@ -196,25 +196,25 @@ class _$_OverBottomSheetSizeOptionFix
     with DiagnosticableTreeMixin
     implements _OverBottomSheetSizeOptionFix {
   const _$_OverBottomSheetSizeOptionFix(
-      {required this.maxHeight,
-      required this.minHeight,
-      this.maxWidth = double.infinity,
-      this.minWidth = 0.0});
+      {this.maxWidth = double.infinity,
+      this.minWidth = 0.0,
+      required this.maxHeight,
+      required this.minHeight});
 
-  @override
-  final double maxHeight;
-  @override
-  final double minHeight;
   @override
   @JsonKey()
   final double maxWidth;
   @override
   @JsonKey()
   final double minWidth;
+  @override
+  final double maxHeight;
+  @override
+  final double minHeight;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OverBottomSheetSizeOption.fix(maxHeight: $maxHeight, minHeight: $minHeight, maxWidth: $maxWidth, minWidth: $minWidth)';
+    return 'OverBottomSheetSizeOption.fix(maxWidth: $maxWidth, minWidth: $minWidth, maxHeight: $maxHeight, minHeight: $minHeight)';
   }
 
   @override
@@ -222,10 +222,10 @@ class _$_OverBottomSheetSizeOptionFix
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'OverBottomSheetSizeOption.fix'))
-      ..add(DiagnosticsProperty('maxHeight', maxHeight))
-      ..add(DiagnosticsProperty('minHeight', minHeight))
       ..add(DiagnosticsProperty('maxWidth', maxWidth))
-      ..add(DiagnosticsProperty('minWidth', minWidth));
+      ..add(DiagnosticsProperty('minWidth', minWidth))
+      ..add(DiagnosticsProperty('maxHeight', maxHeight))
+      ..add(DiagnosticsProperty('minHeight', minHeight));
   }
 
   @override
@@ -233,19 +233,19 @@ class _$_OverBottomSheetSizeOptionFix
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_OverBottomSheetSizeOptionFix &&
-            (identical(other.maxHeight, maxHeight) ||
-                other.maxHeight == maxHeight) &&
-            (identical(other.minHeight, minHeight) ||
-                other.minHeight == minHeight) &&
             (identical(other.maxWidth, maxWidth) ||
                 other.maxWidth == maxWidth) &&
             (identical(other.minWidth, minWidth) ||
-                other.minWidth == minWidth));
+                other.minWidth == minWidth) &&
+            (identical(other.maxHeight, maxHeight) ||
+                other.maxHeight == maxHeight) &&
+            (identical(other.minHeight, minHeight) ||
+                other.minHeight == minHeight));
   }
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, maxHeight, minHeight, maxWidth, minWidth);
+      Object.hash(runtimeType, maxWidth, minWidth, maxHeight, minHeight);
 
   @JsonKey(ignore: true)
   @override
@@ -257,51 +257,51 @@ class _$_OverBottomSheetSizeOptionFix
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         fix,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         ratio,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         mix,
   }) {
-    return fix(maxHeight, minHeight, maxWidth, minWidth);
+    return fix(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
   }) {
-    return fix?.call(maxHeight, minHeight, maxWidth, minWidth);
+    return fix?.call(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
     required TResult orElse(),
   }) {
     if (fix != null) {
-      return fix(maxHeight, minHeight, maxWidth, minWidth);
+      return fix(maxWidth, minWidth, maxHeight, minHeight);
     }
     return orElse();
   }
@@ -344,19 +344,19 @@ class _$_OverBottomSheetSizeOptionFix
 abstract class _OverBottomSheetSizeOptionFix
     implements OverBottomSheetSizeOption {
   const factory _OverBottomSheetSizeOptionFix(
-      {required final double maxHeight,
-      required final double minHeight,
-      final double maxWidth,
-      final double minWidth}) = _$_OverBottomSheetSizeOptionFix;
+      {final double maxWidth,
+      final double minWidth,
+      required final double maxHeight,
+      required final double minHeight}) = _$_OverBottomSheetSizeOptionFix;
 
-  @override
-  double get maxHeight;
-  @override
-  double get minHeight;
   @override
   double get maxWidth;
   @override
   double get minWidth;
+  @override
+  double get maxHeight;
+  @override
+  double get minHeight;
   @override
   @JsonKey(ignore: true)
   _$$_OverBottomSheetSizeOptionFixCopyWith<_$_OverBottomSheetSizeOptionFix>
@@ -373,7 +373,7 @@ abstract class _$$_OverBottomSheetSizeOptionRatioCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {double maxHeight, double minHeight, double maxWidth, double minWidth});
+      {double maxWidth, double minWidth, double maxHeight, double minHeight});
 }
 
 /// @nodoc
@@ -389,20 +389,12 @@ class __$$_OverBottomSheetSizeOptionRatioCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxHeight = null,
-    Object? minHeight = null,
     Object? maxWidth = null,
     Object? minWidth = null,
+    Object? maxHeight = null,
+    Object? minHeight = null,
   }) {
     return _then(_$_OverBottomSheetSizeOptionRatio(
-      maxHeight: null == maxHeight
-          ? _value.maxHeight
-          : maxHeight // ignore: cast_nullable_to_non_nullable
-              as double,
-      minHeight: null == minHeight
-          ? _value.minHeight
-          : minHeight // ignore: cast_nullable_to_non_nullable
-              as double,
       maxWidth: null == maxWidth
           ? _value.maxWidth
           : maxWidth // ignore: cast_nullable_to_non_nullable
@@ -410,6 +402,14 @@ class __$$_OverBottomSheetSizeOptionRatioCopyWithImpl<$Res>
       minWidth: null == minWidth
           ? _value.minWidth
           : minWidth // ignore: cast_nullable_to_non_nullable
+              as double,
+      maxHeight: null == maxHeight
+          ? _value.maxHeight
+          : maxHeight // ignore: cast_nullable_to_non_nullable
+              as double,
+      minHeight: null == minHeight
+          ? _value.minHeight
+          : minHeight // ignore: cast_nullable_to_non_nullable
               as double,
     ));
   }
@@ -421,25 +421,25 @@ class _$_OverBottomSheetSizeOptionRatio
     with DiagnosticableTreeMixin
     implements _OverBottomSheetSizeOptionRatio {
   const _$_OverBottomSheetSizeOptionRatio(
-      {required this.maxHeight,
-      required this.minHeight,
-      this.maxWidth = 1.0,
-      this.minWidth = 0.0});
+      {this.maxWidth = double.infinity,
+      this.minWidth = 0.0,
+      required this.maxHeight,
+      required this.minHeight});
 
-  @override
-  final double maxHeight;
-  @override
-  final double minHeight;
   @override
   @JsonKey()
   final double maxWidth;
   @override
   @JsonKey()
   final double minWidth;
+  @override
+  final double maxHeight;
+  @override
+  final double minHeight;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OverBottomSheetSizeOption.ratio(maxHeight: $maxHeight, minHeight: $minHeight, maxWidth: $maxWidth, minWidth: $minWidth)';
+    return 'OverBottomSheetSizeOption.ratio(maxWidth: $maxWidth, minWidth: $minWidth, maxHeight: $maxHeight, minHeight: $minHeight)';
   }
 
   @override
@@ -447,10 +447,10 @@ class _$_OverBottomSheetSizeOptionRatio
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'OverBottomSheetSizeOption.ratio'))
-      ..add(DiagnosticsProperty('maxHeight', maxHeight))
-      ..add(DiagnosticsProperty('minHeight', minHeight))
       ..add(DiagnosticsProperty('maxWidth', maxWidth))
-      ..add(DiagnosticsProperty('minWidth', minWidth));
+      ..add(DiagnosticsProperty('minWidth', minWidth))
+      ..add(DiagnosticsProperty('maxHeight', maxHeight))
+      ..add(DiagnosticsProperty('minHeight', minHeight));
   }
 
   @override
@@ -458,19 +458,19 @@ class _$_OverBottomSheetSizeOptionRatio
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_OverBottomSheetSizeOptionRatio &&
-            (identical(other.maxHeight, maxHeight) ||
-                other.maxHeight == maxHeight) &&
-            (identical(other.minHeight, minHeight) ||
-                other.minHeight == minHeight) &&
             (identical(other.maxWidth, maxWidth) ||
                 other.maxWidth == maxWidth) &&
             (identical(other.minWidth, minWidth) ||
-                other.minWidth == minWidth));
+                other.minWidth == minWidth) &&
+            (identical(other.maxHeight, maxHeight) ||
+                other.maxHeight == maxHeight) &&
+            (identical(other.minHeight, minHeight) ||
+                other.minHeight == minHeight));
   }
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, maxHeight, minHeight, maxWidth, minWidth);
+      Object.hash(runtimeType, maxWidth, minWidth, maxHeight, minHeight);
 
   @JsonKey(ignore: true)
   @override
@@ -482,51 +482,51 @@ class _$_OverBottomSheetSizeOptionRatio
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         fix,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         ratio,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         mix,
   }) {
-    return ratio(maxHeight, minHeight, maxWidth, minWidth);
+    return ratio(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
   }) {
-    return ratio?.call(maxHeight, minHeight, maxWidth, minWidth);
+    return ratio?.call(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
     required TResult orElse(),
   }) {
     if (ratio != null) {
-      return ratio(maxHeight, minHeight, maxWidth, minWidth);
+      return ratio(maxWidth, minWidth, maxHeight, minHeight);
     }
     return orElse();
   }
@@ -569,19 +569,19 @@ class _$_OverBottomSheetSizeOptionRatio
 abstract class _OverBottomSheetSizeOptionRatio
     implements OverBottomSheetSizeOption {
   const factory _OverBottomSheetSizeOptionRatio(
-      {required final double maxHeight,
-      required final double minHeight,
-      final double maxWidth,
-      final double minWidth}) = _$_OverBottomSheetSizeOptionRatio;
+      {final double maxWidth,
+      final double minWidth,
+      required final double maxHeight,
+      required final double minHeight}) = _$_OverBottomSheetSizeOptionRatio;
 
-  @override
-  double get maxHeight;
-  @override
-  double get minHeight;
   @override
   double get maxWidth;
   @override
   double get minWidth;
+  @override
+  double get maxHeight;
+  @override
+  double get minHeight;
   @override
   @JsonKey(ignore: true)
   _$$_OverBottomSheetSizeOptionRatioCopyWith<_$_OverBottomSheetSizeOptionRatio>
@@ -598,7 +598,7 @@ abstract class _$$_OverBottomSheetSizeOptionMixCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {double maxHeight, double minHeight, double maxWidth, double minWidth});
+      {double maxWidth, double minWidth, double maxHeight, double minHeight});
 }
 
 /// @nodoc
@@ -614,20 +614,12 @@ class __$$_OverBottomSheetSizeOptionMixCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? maxHeight = null,
-    Object? minHeight = null,
     Object? maxWidth = null,
     Object? minWidth = null,
+    Object? maxHeight = null,
+    Object? minHeight = null,
   }) {
     return _then(_$_OverBottomSheetSizeOptionMix(
-      maxHeight: null == maxHeight
-          ? _value.maxHeight
-          : maxHeight // ignore: cast_nullable_to_non_nullable
-              as double,
-      minHeight: null == minHeight
-          ? _value.minHeight
-          : minHeight // ignore: cast_nullable_to_non_nullable
-              as double,
       maxWidth: null == maxWidth
           ? _value.maxWidth
           : maxWidth // ignore: cast_nullable_to_non_nullable
@@ -635,6 +627,14 @@ class __$$_OverBottomSheetSizeOptionMixCopyWithImpl<$Res>
       minWidth: null == minWidth
           ? _value.minWidth
           : minWidth // ignore: cast_nullable_to_non_nullable
+              as double,
+      maxHeight: null == maxHeight
+          ? _value.maxHeight
+          : maxHeight // ignore: cast_nullable_to_non_nullable
+              as double,
+      minHeight: null == minHeight
+          ? _value.minHeight
+          : minHeight // ignore: cast_nullable_to_non_nullable
               as double,
     ));
   }
@@ -646,25 +646,25 @@ class _$_OverBottomSheetSizeOptionMix
     with DiagnosticableTreeMixin
     implements _OverBottomSheetSizeOptionMix {
   const _$_OverBottomSheetSizeOptionMix(
-      {required this.maxHeight,
-      required this.minHeight,
-      this.maxWidth = 1.0,
-      this.minWidth = 0.0});
+      {this.maxWidth = double.infinity,
+      this.minWidth = 0.0,
+      required this.maxHeight,
+      required this.minHeight});
 
-  @override
-  final double maxHeight;
-  @override
-  final double minHeight;
   @override
   @JsonKey()
   final double maxWidth;
   @override
   @JsonKey()
   final double minWidth;
+  @override
+  final double maxHeight;
+  @override
+  final double minHeight;
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OverBottomSheetSizeOption.mix(maxHeight: $maxHeight, minHeight: $minHeight, maxWidth: $maxWidth, minWidth: $minWidth)';
+    return 'OverBottomSheetSizeOption.mix(maxWidth: $maxWidth, minWidth: $minWidth, maxHeight: $maxHeight, minHeight: $minHeight)';
   }
 
   @override
@@ -672,10 +672,10 @@ class _$_OverBottomSheetSizeOptionMix
     super.debugFillProperties(properties);
     properties
       ..add(DiagnosticsProperty('type', 'OverBottomSheetSizeOption.mix'))
-      ..add(DiagnosticsProperty('maxHeight', maxHeight))
-      ..add(DiagnosticsProperty('minHeight', minHeight))
       ..add(DiagnosticsProperty('maxWidth', maxWidth))
-      ..add(DiagnosticsProperty('minWidth', minWidth));
+      ..add(DiagnosticsProperty('minWidth', minWidth))
+      ..add(DiagnosticsProperty('maxHeight', maxHeight))
+      ..add(DiagnosticsProperty('minHeight', minHeight));
   }
 
   @override
@@ -683,19 +683,19 @@ class _$_OverBottomSheetSizeOptionMix
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$_OverBottomSheetSizeOptionMix &&
-            (identical(other.maxHeight, maxHeight) ||
-                other.maxHeight == maxHeight) &&
-            (identical(other.minHeight, minHeight) ||
-                other.minHeight == minHeight) &&
             (identical(other.maxWidth, maxWidth) ||
                 other.maxWidth == maxWidth) &&
             (identical(other.minWidth, minWidth) ||
-                other.minWidth == minWidth));
+                other.minWidth == minWidth) &&
+            (identical(other.maxHeight, maxHeight) ||
+                other.maxHeight == maxHeight) &&
+            (identical(other.minHeight, minHeight) ||
+                other.minHeight == minHeight));
   }
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, maxHeight, minHeight, maxWidth, minWidth);
+      Object.hash(runtimeType, maxWidth, minWidth, maxHeight, minHeight);
 
   @JsonKey(ignore: true)
   @override
@@ -707,51 +707,51 @@ class _$_OverBottomSheetSizeOptionMix
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         fix,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         ratio,
-    required TResult Function(double maxHeight, double minHeight,
-            double maxWidth, double minWidth)
+    required TResult Function(double maxWidth, double minWidth,
+            double maxHeight, double minHeight)
         mix,
   }) {
-    return mix(maxHeight, minHeight, maxWidth, minWidth);
+    return mix(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult? Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult? Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
   }) {
-    return mix?.call(maxHeight, minHeight, maxWidth, minWidth);
+    return mix?.call(maxWidth, minWidth, maxHeight, minHeight);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         fix,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         ratio,
-    TResult Function(double maxHeight, double minHeight, double maxWidth,
-            double minWidth)?
+    TResult Function(double maxWidth, double minWidth, double maxHeight,
+            double minHeight)?
         mix,
     required TResult orElse(),
   }) {
     if (mix != null) {
-      return mix(maxHeight, minHeight, maxWidth, minWidth);
+      return mix(maxWidth, minWidth, maxHeight, minHeight);
     }
     return orElse();
   }
@@ -794,19 +794,19 @@ class _$_OverBottomSheetSizeOptionMix
 abstract class _OverBottomSheetSizeOptionMix
     implements OverBottomSheetSizeOption {
   const factory _OverBottomSheetSizeOptionMix(
-      {required final double maxHeight,
-      required final double minHeight,
-      final double maxWidth,
-      final double minWidth}) = _$_OverBottomSheetSizeOptionMix;
+      {final double maxWidth,
+      final double minWidth,
+      required final double maxHeight,
+      required final double minHeight}) = _$_OverBottomSheetSizeOptionMix;
 
-  @override
-  double get maxHeight;
-  @override
-  double get minHeight;
   @override
   double get maxWidth;
   @override
   double get minWidth;
+  @override
+  double get maxHeight;
+  @override
+  double get minHeight;
   @override
   @JsonKey(ignore: true)
   _$$_OverBottomSheetSizeOptionMixCopyWith<_$_OverBottomSheetSizeOptionMix>
