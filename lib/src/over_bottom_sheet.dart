@@ -112,7 +112,9 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
                     children: [
                       _header,
                       Expanded(
-                        child: _content,
+                        child: SizedBox.expand(
+                          child: _content,
+                        ),
                       ),
                     ],
                   ),
