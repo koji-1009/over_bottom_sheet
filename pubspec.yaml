@@ -1,6 +1,6 @@
 name: over_bottom_sheet
 description: Widget that always displays BottomSheet.
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/koji-1009/over_bottom_sheet
 
 environment:
