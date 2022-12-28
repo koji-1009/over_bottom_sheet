@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet_controller.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet_option.dart';
 
-typedef SheetWidgetBuilder = Widget Function(
+/// Function to create a widget using the display ratio of [OverBottomSheet].
+typedef RatioWidgetBuilder = Widget Function(
   BuildContext context,
   double ratio,
 );
 
+/// Widget that always displays [BottomSheet].
 class OverBottomSheet extends StatefulWidget {
   const OverBottomSheet({
     super.key,
@@ -29,9 +31,9 @@ class OverBottomSheet extends StatefulWidget {
   final OverBottomSheetSizeOption sizeOption;
 
   final Widget? header;
-  final SheetWidgetBuilder? headerBuilder;
+  final RatioWidgetBuilder? headerBuilder;
   final Widget? content;
-  final SheetWidgetBuilder? contentBuilder;
+  final RatioWidgetBuilder? contentBuilder;
 
   final Color? backgroundColor;
   final double? elevation;
