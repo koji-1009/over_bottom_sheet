@@ -13,14 +13,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'OverBottomSheet Demo',
       theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
       ),
       darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
       ),
       home: const MyHomePage(),
     );
@@ -40,7 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _controller.dispose();
-
     super.dispose();
   }
 
@@ -51,14 +52,13 @@ class _MyHomePageState extends State<MyHomePage> {
         title: const Text('Demo'),
       ),
       body: OverBottomSheet(
-        clipBehavior: Clip.hardEdge,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
           ),
         ),
-        sizeOption: const OverBottomSheetSizeOption.mix(
+        sizeOption: const OverBottomSheetSizeOptionMix(
           maxHeight: 0.8,
           minHeight: 120,
           maxWidth: 0.8,
@@ -91,15 +91,31 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         content: ListView.builder(
+          itemCount: 20,
           itemBuilder: (context, index) => ListTile(
             title: Text('sheet $index'),
           ),
         ),
-        child: Container(
-          color: Colors.indigo,
-          child: ListView.builder(
-            itemBuilder: (context, index) => ListTile(
-              title: Text('main $index'),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(8),
+          itemCount: 200,
+          itemBuilder: (context, index) => Card(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              title: Text(
+                'main $index',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+              ),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Background: tapped $index'),
+                  ),
+                );
+              },
             ),
           ),
         ),

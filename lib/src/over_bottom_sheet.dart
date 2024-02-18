@@ -45,7 +45,7 @@ class OverBottomSheet extends StatefulWidget {
 }
 
 class _OverlappedPanelState extends State<OverBottomSheet> {
-  final _innerController = OverBottomSheetController();
+  late final _innerController = OverBottomSheetController();
 
   OverBottomSheetController get _controller =>
       widget.controller ?? _innerController;
@@ -76,17 +76,24 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
   @override
   void dispose() {
     _innerController.dispose();
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    void moveSheet({
+      required double base,
+      required double dy,
+    }) {
+      final ratio = _controller.value - dy / base;
+      _controller.updateRatio(ratio);
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final sheetConstraints = widget.sizeOption.boxConstraints(constraints);
         final base = sheetConstraints.maxHeight - sheetConstraints.minHeight;
-        _moveSheet(
+        moveSheet(
           base: base,
           dy: 0,
         );
@@ -103,7 +110,7 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
               ),
               child: GestureDetector(
                 onVerticalDragUpdate: (details) {
-                  _moveSheet(
+                  moveSheet(
                     base: base,
                     dy: details.delta.dy,
                   );
@@ -135,37 +142,52 @@ class _OverlappedPanelState extends State<OverBottomSheet> {
       },
     );
   }
-
-  void _moveSheet({
-    required double base,
-    required double dy,
-  }) {
-    final ratio = _controller.value - dy / base;
-    _controller.updateRatio(ratio);
-  }
 }
 
 extension on OverBottomSheetSizeOption {
-  BoxConstraints boxConstraints(BoxConstraints constraints) => when(
-        fix: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
-          maxWidth: maxWidth,
-          minWidth: minWidth,
-          maxHeight: maxHeight,
-          minHeight: minHeight,
-        ),
-        ratio: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
-          maxWidth: constraints.maxWidth * maxWidth,
-          minWidth: constraints.maxWidth * minWidth,
-          maxHeight: constraints.maxHeight * maxHeight,
-          minHeight: constraints.maxHeight * minHeight,
-        ),
-        mix: (maxWidth, minWidth, maxHeight, minHeight) => BoxConstraints(
-          maxWidth: maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
-          minWidth: minWidth > 1.0 ? minWidth : constraints.maxWidth * minWidth,
-          maxHeight:
-              maxHeight > 1.0 ? maxHeight : constraints.maxHeight * maxHeight,
-          minHeight:
-              minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
-        ),
-      );
+  BoxConstraints boxConstraints(
+    BoxConstraints constraints,
+  ) =>
+      switch (this) {
+        OverBottomSheetSizeOptionFix(
+          maxWidth: final maxWidth,
+          minWidth: final minWidth,
+          maxHeight: final maxHeight,
+          minHeight: final minHeight,
+        ) =>
+          BoxConstraints(
+            maxWidth: maxWidth,
+            minWidth: minWidth,
+            maxHeight: maxHeight,
+            minHeight: minHeight,
+          ),
+        OverBottomSheetSizeOptionRatio(
+          maxWidth: final maxWidth,
+          minWidth: final minWidth,
+          maxHeight: final maxHeight,
+          minHeight: final minHeight,
+        ) =>
+          BoxConstraints(
+            maxWidth: constraints.maxWidth * maxWidth,
+            minWidth: constraints.maxWidth * minWidth,
+            maxHeight: constraints.maxHeight * maxHeight,
+            minHeight: constraints.maxHeight * minHeight,
+          ),
+        OverBottomSheetSizeOptionMix(
+          maxWidth: final maxWidth,
+          minWidth: final minWidth,
+          maxHeight: final maxHeight,
+          minHeight: final minHeight,
+        ) =>
+          BoxConstraints(
+            maxWidth:
+                maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
+            minWidth:
+                minWidth > 1.0 ? minWidth : constraints.maxWidth * minWidth,
+            maxHeight:
+                maxHeight > 1.0 ? maxHeight : constraints.maxHeight * maxHeight,
+            minHeight:
+                minHeight > 1.0 ? minHeight : constraints.maxHeight * minHeight,
+          ),
+      };
 }

@@ -1,36 +1,63 @@
-import 'package:flutter/foundation.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:over_bottom_sheet/src/over_bottom_sheet.dart';
 
-part 'over_bottom_sheet_option.freezed.dart';
-
 /// Option to specify height and width of [OverBottomSheet].
-@freezed
-class OverBottomSheetSizeOption with _$OverBottomSheetSizeOption {
-  /// Specify the value of height and width.
-  const factory OverBottomSheetSizeOption.fix({
-    @Default(double.infinity) double maxWidth,
-    @Default(0.0) double minWidth,
-    required double maxHeight,
-    required double minHeight,
-  }) = _OverBottomSheetSizeOptionFix;
+sealed class OverBottomSheetSizeOption {
+  const OverBottomSheetSizeOption({
+    required this.maxWidth,
+    required this.minWidth,
+    required this.maxHeight,
+    required this.minHeight,
+  });
 
-  /// Specify the ratio of height and width.
-  const factory OverBottomSheetSizeOption.ratio({
-    @Default(double.infinity) double maxWidth,
-    @Default(0.0) double minWidth,
-    required double maxHeight,
-    required double minHeight,
-  }) = _OverBottomSheetSizeOptionRatio;
+  final double maxWidth;
+  final double minWidth;
+  final double maxHeight;
+  final double minHeight;
 
-  /// Use a mixture of [OverBottomSheetSizeOption.fix] and
-  /// [OverBottomSheetSizeOption.ratio].
-  /// The size is defined as a ratio if it is less than 1.0,
-  /// and as a fix mode if it is greater than 1.0.
-  const factory OverBottomSheetSizeOption.mix({
-    @Default(double.infinity) double maxWidth,
-    @Default(0.0) double minWidth,
-    required double maxHeight,
-    required double minHeight,
-  }) = _OverBottomSheetSizeOptionMix;
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, maxWidth, minWidth, maxHeight, minHeight);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    return other is OverBottomSheetSizeOption &&
+        other.maxWidth == maxWidth &&
+        other.minWidth == minWidth &&
+        other.maxHeight == maxHeight &&
+        other.minHeight == minHeight;
+  }
+}
+
+/// Specify the value of height and width.
+class OverBottomSheetSizeOptionFix extends OverBottomSheetSizeOption {
+  const OverBottomSheetSizeOptionFix({
+    super.maxWidth = double.infinity,
+    super.minWidth = 0.0,
+    required super.maxHeight,
+    required super.minHeight,
+  });
+}
+
+/// Specify the ratio of height and width.
+class OverBottomSheetSizeOptionRatio extends OverBottomSheetSizeOption {
+  const OverBottomSheetSizeOptionRatio({
+    super.maxWidth = double.infinity,
+    super.minWidth = 0.0,
+    required super.maxHeight,
+    required super.minHeight,
+  });
+}
+
+/// Use a mixture of [OverBottomSheetSizeOptionFix] and [OverBottomSheetSizeOptionRatio].
+/// The size is defined as a ratio if it is less than 1.0,
+/// and as a fix mode if it is greater than 1.0.
+class OverBottomSheetSizeOptionMix extends OverBottomSheetSizeOption {
+  const OverBottomSheetSizeOptionMix({
+    super.maxWidth = double.infinity,
+    super.minWidth = 0.0,
+    required super.maxHeight,
+    required super.minHeight,
+  });
 }
