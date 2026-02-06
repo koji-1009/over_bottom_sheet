@@ -6,12 +6,12 @@ A Flutter widget that provides an always-visible, draggable bottom sheet with mu
 
 ## Features
 
-- Always-visible bottom sheet overlay
-- Multiple snap points (e.g., closed, half-open, full)
-- Velocity-based fling gestures
-- Nested scroll handling (scrollable content inside sheet)
-- Flexible size options (fixed, ratio, or mixed)
-- `ValueNotifier`-based controller for reactive updates
+* Always-visible bottom sheet overlay
+* Multiple snap points (e.g., closed, half-open, full)
+* Velocity-based fling gestures
+* Nested scroll handling (scrollable content inside sheet)
+* Flexible size options (fixed, ratio, or mixed)
+* `ValueNotifier`-based controller for reactive updates
 
 ## Usage
 
@@ -74,11 +74,11 @@ controller.addListener(() => print(controller.value));
 
 ## Size Options
 
-| Option | Description |
-|--------|-------------|
-| `OverBottomSheetSizeOptionFix` | Fixed pixel values |
-| `OverBottomSheetSizeOptionRatio` | Ratio of parent size (0.0-1.0) |
-| `OverBottomSheetSizeOptionMix` | Auto-detect: >1.0 = pixels, ≤1.0 = ratio |
+| Option                           | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `OverBottomSheetSizeOptionFix`   | Fixed pixel values                       |
+| `OverBottomSheetSizeOptionRatio` | Ratio of parent size (0.0-1.0)           |
+| `OverBottomSheetSizeOptionMix`   | Auto-detect: >1.0 = pixels, ≤1.0 = ratio |
 
 ## API Reference
 
@@ -86,16 +86,16 @@ See the [API documentation](https://pub.dev/documentation/over_bottom_sheet/late
 
 ### OverBottomSheet
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `controller` | `OverBottomSheetController?` | Controls sheet position |
-| `sizeOption` | `OverBottomSheetSizeOption` | Size constraints (required) |
-| `snapPoints` | `List<double>` | Snap positions (default: `[0.0, 1.0]`) |
-| `handleNestedScroll` | `bool` | Enable nested scroll handling |
-| `velocityThreshold` | `double` | Fling detection threshold (default: 300.0) |
-| `header` / `headerBuilder` | `Widget` / `Function` | Header widget |
-| `content` / `contentBuilder` | `Widget` / `Function` | Sheet content |
-| `child` | `Widget` | Background content (required) |
+| Property                     | Type                         | Description                                |
+| ---------------------------- | ---------------------------- | ------------------------------------------ |
+| `controller`                 | `OverBottomSheetController?` | Controls sheet position                    |
+| `sizeOption`                 | `OverBottomSheetSizeOption`  | Size constraints (required)                |
+| `snapPoints`                 | `List<double>`               | Snap positions (default: `[0.0, 1.0]`)     |
+| `handleNestedScroll`         | `bool`                       | Enable nested scroll handling              |
+| `velocityThreshold`          | `double`                     | Fling detection threshold (default: 300.0) |
+| `header` / `headerBuilder`   | `Widget` / `Function`        | Header widget                              |
+| `content` / `contentBuilder` | `Widget` / `Function`        | Sheet content                              |
+| `child`                      | `Widget`                     | Background content (required)              |
 
 ## License
 
