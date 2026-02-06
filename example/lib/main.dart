@@ -14,13 +14,13 @@ class MyApp extends StatelessWidget {
       title: 'OverBottomSheet Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.indigo,
           brightness: Brightness.light,
         ),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.indigo,
           brightness: Brightness.dark,
         ),
       ),
@@ -47,73 +47,115 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Demo'),
-      ),
+      appBar: AppBar(title: const Text('OverBottomSheet Demo')),
       body: OverBottomSheet(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(32),
-            topRight: Radius.circular(32),
-          ),
-        ),
-        sizeOption: const OverBottomSheetSizeOptionMix(
-          maxHeight: 0.8,
-          minHeight: 120,
-          maxWidth: 0.8,
-        ),
         controller: _controller,
-        headerBuilder: (context, ratio) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ValueListenableBuilder<double>(
-                  valueListenable: _controller,
-                  builder: (context, value, child) => IconButton(
-                    onPressed: () {
-                      if (value <= 0.5) {
-                        _controller.open();
-                      } else {
-                        _controller.close();
-                      }
-                    },
-                    icon: value >= 0.5
-                        ? const Icon(Icons.expand_more)
-                        : const Icon(Icons.expand_less),
-                  ),
+        // Multiple snap points: closed, half, full
+        snapPoints: const [0.0, 0.5, 1.0],
+        // Enable nested scroll handling
+        handleNestedScroll: true,
+        sizeOption: const OverBottomSheetSizeOptionMix(
+          maxHeight: 0.85,
+          minHeight: 80,
+          maxWidth: 1.0,
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        backgroundColor: colorScheme.primaryContainer,
+        elevation: 8,
+        headerBuilder: (context, ratio) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Ratio indicator
+              Text(
+                '${(ratio * 100).toInt()}%',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-                Text('ratio: ${ratio.toStringAsFixed(3)}'),
-              ],
-            ),
+              ),
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Control buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    onPressed: () => _controller.animateTo(0.0),
+                    tooltip: 'Close',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.unfold_less),
+                    onPressed: () => _controller.animateTo(0.5),
+                    tooltip: 'Half',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_up),
+                    onPressed: () => _controller.animateTo(1.0),
+                    tooltip: 'Open',
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         content: ListView.builder(
-          itemCount: 20,
-          itemBuilder: (context, index) => ListTile(
-            title: Text('sheet $index'),
+          primary: false,
+          padding: const EdgeInsets.all(16),
+          itemCount: 30,
+          itemBuilder: (context, index) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: colorScheme.primaryContainer,
+                child: Text('${index + 1}'),
+              ),
+              title: Text('Sheet Item ${index + 1}'),
+              subtitle: const Text('Scrollable content inside the sheet'),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Tapped item ${index + 1}')),
+                );
+              },
+            ),
           ),
         ),
         child: ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: 200,
+          padding: const EdgeInsets.all(16),
+          itemCount: 50,
           itemBuilder: (context, index) => Card(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            clipBehavior: Clip.antiAlias,
+            color: colorScheme.secondaryContainer,
+            margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               title: Text(
-                'main $index',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+                'Background Item ${index + 1}',
+                style: TextStyle(color: colorScheme.onSecondaryContainer),
+              ),
+              subtitle: Text(
+                'This is the main content behind the sheet',
+                style: TextStyle(
+                  color: colorScheme.onSecondaryContainer.withValues(
+                    alpha: 0.7,
+                  ),
+                ),
               ),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Background: tapped $index'),
-                  ),
+                  SnackBar(content: Text('Background: tapped ${index + 1}')),
                 );
               },
             ),

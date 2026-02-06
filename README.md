@@ -1,64 +1,102 @@
-## OverBottomSheet
+# OverBottomSheet
 
-Widget that always displays BottomSheet.
+A Flutter widget that provides an always-visible, draggable bottom sheet with multiple snap points and nested scroll support.
+
+[![pub package](https://img.shields.io/pub/v/over_bottom_sheet.svg)](https://pub.dev/packages/over_bottom_sheet)
+
+## Features
+
+- Always-visible bottom sheet overlay
+- Multiple snap points (e.g., closed, half-open, full)
+- Velocity-based fling gestures
+- Nested scroll handling (scrollable content inside sheet)
+- Flexible size options (fixed, ratio, or mixed)
+- `ValueNotifier`-based controller for reactive updates
 
 ## Usage
 
+### Basic Example
+
 ```dart
+import 'package:over_bottom_sheet/over_bottom_sheet.dart';
+
 final controller = OverBottomSheetController();
 
 OverBottomSheet(
-  clipBehavior: Clip.hardEdge,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.only(
-      topLeft: Radius.circular(32),
-      topRight: Radius.circular(32),
-    ),
-  ),
-  sizeOption: const OverBottomSheetSizeOption.mix(
-    maxHeight: 0.8,
-    minHeight: 120,
-    maxWidth: 0.8,
-  ),
   controller: controller,
-  headerBuilder: (context, ratio) => Center(
-  child: Padding(
-    padding: const EdgeInsets.all(8),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ValueListenableBuilder<double>(
-          valueListenable: controller,
-          builder: (context, value, child) => IconButton(
-            onPressed: () {
-              if (value <= 0.5) {
-                controller.open();
-              } else {
-                controller.close();
-              }
-            },
-            icon: value >= 0.5
-              ? const Icon(Icons.expand_more)
-              : const Icon(Icons.expand_less),
-            ),
-          ),
-          Text('ratio: ${ratio.toStringAsFixed(3)}'),
-        ],
-      ),
-    ),
+  sizeOption: const OverBottomSheetSizeOptionMix(
+    maxHeight: 0.8,
+    minHeight: 100,
   ),
+  header: const Text('Header'),
   content: ListView.builder(
-    itemBuilder: (context, index) => ListTile(
-      title: Text('sheet $index'),
-    ),
+    itemCount: 20,
+    itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
   ),
-  child: Container(
-    color: Colors.indigo,
-    child: ListView.builder(
-      itemBuilder: (context, index) => ListTile(
-        title: Text('main $index'),
-      ),
-    ),
-  ),
-),
+  child: const Center(child: Text('Main Content')),
+)
 ```
+
+### Multiple Snap Points
+
+```dart
+OverBottomSheet(
+  snapPoints: const [0.0, 0.5, 1.0], // closed, half, full
+  // ...
+)
+```
+
+### Nested Scroll Handling
+
+Enable smooth scrolling inside the sheet content:
+
+```dart
+OverBottomSheet(
+  handleNestedScroll: true,
+  content: ListView.builder(...), // Scrollable content
+  // ...
+)
+```
+
+### Controller Methods
+
+```dart
+// Animate to specific position
+controller.animateTo(0.5);
+
+// Open/close shortcuts
+controller.open();
+controller.close();
+
+// Listen to value changes
+controller.addListener(() => print(controller.value));
+```
+
+## Size Options
+
+| Option | Description |
+|--------|-------------|
+| `OverBottomSheetSizeOptionFix` | Fixed pixel values |
+| `OverBottomSheetSizeOptionRatio` | Ratio of parent size (0.0-1.0) |
+| `OverBottomSheetSizeOptionMix` | Auto-detect: >1.0 = pixels, ≤1.0 = ratio |
+
+## API Reference
+
+See the [API documentation](https://pub.dev/documentation/over_bottom_sheet/latest/) for detailed information.
+
+### OverBottomSheet
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `controller` | `OverBottomSheetController?` | Controls sheet position |
+| `sizeOption` | `OverBottomSheetSizeOption` | Size constraints (required) |
+| `snapPoints` | `List<double>` | Snap positions (default: `[0.0, 1.0]`) |
+| `handleNestedScroll` | `bool` | Enable nested scroll handling |
+| `velocityThreshold` | `double` | Fling detection threshold (default: 300.0) |
+| `header` / `headerBuilder` | `Widget` / `Function` | Header widget |
+| `content` / `contentBuilder` | `Widget` / `Function` | Sheet content |
+| `child` | `Widget` | Background content (required) |
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
