@@ -1,11 +1,11 @@
 name: over_bottom_sheet
-description: Widget that always displays BottomSheet.
-version: 0.0.2
+description: An always-visible, draggable bottom sheet widget with multiple snap points and nested scroll support.
+version: 1.0.0
 homepage: https://github.com/koji-1009/over_bottom_sheet
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
-  flutter: ">=3.10.0"
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: ">=3.32.0"
 
 dependencies:
   flutter:
@@ -14,6 +14,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
