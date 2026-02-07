@@ -6,6 +6,7 @@
 /// - Multiple snap points for positioning
 /// - Nested scroll support for scrollable content
 /// - Programmatic control via controller
+/// - Material 3 theming support
 ///
 /// ## Usage
 ///
@@ -17,10 +18,8 @@
 /// OverBottomSheet(
 ///   controller: controller,
 ///   snapPoints: const [0.0, 0.5, 1.0],
-///   sizeOption: const OverBottomSheetSizeOptionMix(
-///     maxHeight: 0.8,
-///     minHeight: 100,
-///   ),
+///   maxHeight: 0.8,  // 80% of parent (ratio ≤1.0)
+///   minHeight: 100,  // 100px (fixed >1.0)
 ///   content: ListView.builder(...),
 ///   child: const Center(child: Text('Background')),
 /// )
@@ -30,120 +29,6 @@ library;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-
-// region Size Options
-
-/// Base class for specifying the size constraints of [OverBottomSheet].
-///
-/// The sheet animates between [minHeight] (closed) and [maxHeight] (open).
-/// Use one of the following subclasses:
-/// - [OverBottomSheetSizeOptionFix]: Fixed pixel values
-/// - [OverBottomSheetSizeOptionRatio]: Ratio of parent size (0.0-1.0)
-/// - [OverBottomSheetSizeOptionMix]: Auto-detect based on value (>1.0 = pixels, ≤1.0 = ratio)
-@immutable
-sealed class OverBottomSheetSizeOption {
-  /// Creates a size option with the given constraints.
-  const OverBottomSheetSizeOption({
-    required this.maxWidth,
-    required this.minWidth,
-    required this.maxHeight,
-    required this.minHeight,
-  });
-
-  /// Maximum width of the sheet.
-  final double maxWidth;
-
-  /// Minimum width of the sheet.
-  final double minWidth;
-
-  /// Maximum height of the sheet (fully open position).
-  final double maxHeight;
-
-  /// Minimum height of the sheet (closed position).
-  final double minHeight;
-
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, maxWidth, minWidth, maxHeight, minHeight);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other.runtimeType != runtimeType) return false;
-    return other is OverBottomSheetSizeOption &&
-        other.maxWidth == maxWidth &&
-        other.minWidth == minWidth &&
-        other.maxHeight == maxHeight &&
-        other.minHeight == minHeight;
-  }
-}
-
-/// Size option using fixed pixel values.
-///
-/// Example:
-/// ```dart
-/// const OverBottomSheetSizeOptionFix(
-///   maxHeight: 500,
-///   minHeight: 100,
-/// )
-/// ```
-@immutable
-class OverBottomSheetSizeOptionFix extends OverBottomSheetSizeOption {
-  /// Creates a size option with fixed pixel values.
-  const OverBottomSheetSizeOptionFix({
-    super.maxWidth = double.infinity,
-    super.minWidth = 0.0,
-    required super.maxHeight,
-    required super.minHeight,
-  });
-}
-
-/// Size option using ratios of the parent size.
-///
-/// Values should be between 0.0 and 1.0.
-///
-/// Example:
-/// ```dart
-/// const OverBottomSheetSizeOptionRatio(
-///   maxHeight: 0.8,  // 80% of parent height
-///   minHeight: 0.2,  // 20% of parent height
-/// )
-/// ```
-@immutable
-class OverBottomSheetSizeOptionRatio extends OverBottomSheetSizeOption {
-  /// Creates a size option with ratio values.
-  const OverBottomSheetSizeOptionRatio({
-    super.maxWidth = double.infinity,
-    super.minWidth = 0.0,
-    required super.maxHeight,
-    required super.minHeight,
-  });
-}
-
-/// Size option that auto-detects whether to use fixed or ratio values.
-///
-/// Values > 1.0 are treated as fixed pixels.
-/// Values ≤ 1.0 are treated as ratios of the parent size.
-///
-/// Example:
-/// ```dart
-/// const OverBottomSheetSizeOptionMix(
-///   maxHeight: 0.8,  // 80% of parent height (ratio)
-///   minHeight: 100,  // 100 pixels (fixed)
-/// )
-/// ```
-@immutable
-class OverBottomSheetSizeOptionMix extends OverBottomSheetSizeOption {
-  /// Creates a size option with auto-detection.
-  const OverBottomSheetSizeOptionMix({
-    super.maxWidth = double.infinity,
-    super.minWidth = 0.0,
-    required super.maxHeight,
-    required super.minHeight,
-  });
-}
-
-// endregion
 
 // region Controller
 
@@ -236,15 +121,18 @@ typedef RatioWidgetBuilder =
 /// dragged between multiple snap points. It supports nested scrolling within
 /// the sheet content.
 ///
+/// Size values use auto-detection:
+/// - Values > 1.0 are treated as fixed pixels
+/// - Values ≤ 1.0 are treated as ratios of the parent size
+///
 /// {@tool snippet}
 /// ```dart
 /// OverBottomSheet(
 ///   controller: controller,
 ///   snapPoints: const [0.0, 0.5, 1.0],
-///   sizeOption: const OverBottomSheetSizeOptionMix(
-///     maxHeight: 0.8,
-///     minHeight: 100,
-///   ),
+///   maxHeight: 0.8,   // 80% of parent
+///   minHeight: 100,   // 100 pixels
+///   showDragHandle: true,
 ///   content: ListView.builder(...),
 ///   child: const Center(child: Text('Background')),
 /// )
@@ -252,21 +140,26 @@ typedef RatioWidgetBuilder =
 /// {@end-tool}
 class OverBottomSheet extends StatefulWidget {
   /// Creates an always-visible bottom sheet.
-  ///
-  /// The [sizeOption] and [child] arguments are required.
   const OverBottomSheet({
     super.key,
     this.controller,
     required this.child,
-    required this.sizeOption,
+    required this.maxHeight,
+    required this.minHeight,
+    this.width,
     this.header,
     this.headerBuilder,
     this.content,
     this.contentBuilder,
     this.backgroundColor,
     this.elevation,
+    this.shadowColor,
+    this.surfaceTintColor,
     this.shape,
     this.clipBehavior,
+    this.showDragHandle,
+    this.dragHandleColor,
+    this.dragHandleSize,
     this.velocityThreshold = 300.0,
     this.snapPoints = const [0.0, 1.0],
     this.handleNestedScroll = false,
@@ -284,12 +177,24 @@ class OverBottomSheet extends StatefulWidget {
   /// The widget displayed behind the bottom sheet.
   final Widget child;
 
-  /// Size constraints for the bottom sheet.
+  /// Maximum height of the sheet (fully open position).
   ///
-  /// Use [OverBottomSheetSizeOptionFix] for fixed pixel values,
-  /// [OverBottomSheetSizeOptionRatio] for ratios, or
-  /// [OverBottomSheetSizeOptionMix] for auto-detection.
-  final OverBottomSheetSizeOption sizeOption;
+  /// Values > 1.0 are treated as fixed pixels.
+  /// Values ≤ 1.0 are treated as ratios of the parent height.
+  final double maxHeight;
+
+  /// Minimum height of the sheet (closed position).
+  ///
+  /// Values > 1.0 are treated as fixed pixels.
+  /// Values ≤ 1.0 are treated as ratios of the parent height.
+  final double minHeight;
+
+  /// Width of the sheet.
+  ///
+  /// If null, the sheet uses the full parent width.
+  /// Values > 1.0 are treated as fixed pixels.
+  /// Values ≤ 1.0 are treated as ratios of the parent width.
+  final double? width;
 
   /// Static header widget displayed at the top of the sheet.
   ///
@@ -308,16 +213,50 @@ class OverBottomSheet extends StatefulWidget {
   final RatioWidgetBuilder? contentBuilder;
 
   /// Background color of the bottom sheet.
+  ///
+  /// Defaults to [BottomSheetThemeData.backgroundColor],
+  /// or [ColorScheme.surfaceContainerLow] if not specified.
   final Color? backgroundColor;
 
   /// Elevation of the bottom sheet.
+  ///
+  /// Defaults to [BottomSheetThemeData.elevation] or 1.0.
   final double? elevation;
 
+  /// The color of the shadow below the sheet.
+  ///
+  /// Defaults to [BottomSheetThemeData.shadowColor] or transparent.
+  final Color? shadowColor;
+
+  /// The color used as an overlay on [backgroundColor] to indicate elevation.
+  ///
+  /// Defaults to [BottomSheetThemeData.surfaceTintColor] or transparent.
+  final Color? surfaceTintColor;
+
   /// Shape of the bottom sheet (e.g., rounded corners).
+  ///
+  /// Defaults to [BottomSheetThemeData.shape].
   final ShapeBorder? shape;
 
   /// Clip behavior for the sheet content.
+  ///
+  /// Defaults to [BottomSheetThemeData.clipBehavior] or [Clip.none].
   final Clip? clipBehavior;
+
+  /// Whether to show the standard drag handle at the top.
+  ///
+  /// Defaults to [BottomSheetThemeData.showDragHandle].
+  final bool? showDragHandle;
+
+  /// Color of the drag handle.
+  ///
+  /// Defaults to [BottomSheetThemeData.dragHandleColor] or onSurfaceVariant.
+  final Color? dragHandleColor;
+
+  /// Size of the drag handle.
+  ///
+  /// Defaults to [BottomSheetThemeData.dragHandleSize] or 32x4.
+  final Size? dragHandleSize;
 
   /// Velocity threshold for fling gesture detection.
   ///
@@ -456,8 +395,69 @@ class _OverBottomSheetState extends State<OverBottomSheet>
     }
   }
 
+  BoxConstraints _calculateConstraints(BoxConstraints constraints) {
+    final maxH = widget.maxHeight > 1.0
+        ? widget.maxHeight
+        : constraints.maxHeight * widget.maxHeight;
+    final minH = widget.minHeight > 1.0
+        ? widget.minHeight
+        : constraints.maxHeight * widget.minHeight;
+
+    // Calculate width
+    double maxW = constraints.maxWidth;
+    if (widget.width != null) {
+      maxW = widget.width! > 1.0
+          ? widget.width!
+          : constraints.maxWidth * widget.width!;
+      // Clamp to parent width
+      maxW = maxW.clamp(0.0, constraints.maxWidth);
+    }
+
+    return BoxConstraints(
+      maxWidth: maxW,
+      minWidth: maxW, // Use same value for fixed width
+      maxHeight: maxH,
+      minHeight: minH,
+    );
+  }
+
+  Widget _buildDragHandle(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomSheetTheme = theme.bottomSheetTheme;
+
+    final handleColor =
+        widget.dragHandleColor ??
+        bottomSheetTheme.dragHandleColor ??
+        theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4);
+
+    final handleSize =
+        widget.dragHandleSize ??
+        bottomSheetTheme.dragHandleSize ??
+        const Size(32, 4);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Container(
+          width: handleSize.width,
+          height: handleSize.height,
+          decoration: BoxDecoration(
+            color: handleColor,
+            borderRadius: BorderRadius.circular(handleSize.height / 2),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomSheetTheme = theme.bottomSheetTheme;
+
+    final showHandle =
+        widget.showDragHandle ?? bottomSheetTheme.showDragHandle ?? false;
+
     void moveSheet({required double base, required double dy}) {
       final ratio = _controller.value - dy / base;
       _controller.updateRatio(ratio);
@@ -465,7 +465,7 @@ class _OverBottomSheetState extends State<OverBottomSheet>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final sheetConstraints = widget.sizeOption._boxConstraints(constraints);
+        final sheetConstraints = _calculateConstraints(constraints);
         final base = sheetConstraints.maxHeight - sheetConstraints.minHeight;
         final maxSnap = _sortedSnaps.last;
 
@@ -505,31 +505,12 @@ class _OverBottomSheetState extends State<OverBottomSheet>
                   final velocity = details.primaryVelocity ?? 0;
                   final currentValue = _controller.value;
 
-                  double targetSnap;
-
-                  // If velocity is high enough, fling to next snap point
-                  if (velocity.abs() > widget.velocityThreshold) {
-                    if (velocity < 0) {
-                      // Swiping up - find next higher snap point
-                      targetSnap = _sortedSnaps.firstWhere(
-                        (s) => s > currentValue,
-                        orElse: () => _sortedSnaps.last,
-                      );
-                    } else {
-                      // Swiping down - find next lower snap point
-                      targetSnap = _sortedSnaps.lastWhere(
-                        (s) => s < currentValue,
-                        orElse: () => _sortedSnaps.first,
-                      );
-                    }
-                  } else {
-                    // Snap to nearest
-                    targetSnap = _sortedSnaps.reduce((a, b) {
-                      return (currentValue - a).abs() < (currentValue - b).abs()
-                          ? a
-                          : b;
-                    });
-                  }
+                  final targetSnap = calculateTargetSnap(
+                    currentValue: currentValue,
+                    velocity: velocity,
+                    velocityThreshold: widget.velocityThreshold,
+                    sortedSnaps: _sortedSnaps,
+                  );
 
                   widget.onDragEnd?.call(targetSnap);
                   _animateTo(targetSnap).then((_) {
@@ -544,21 +525,36 @@ class _OverBottomSheetState extends State<OverBottomSheet>
                     }
                     return false; // Don't consume the notification
                   },
-                  child: BottomSheet(
-                    constraints: sheetConstraints,
-                    builder: (context) => Column(
-                      children: [
-                        _header,
-                        Expanded(child: SizedBox.expand(child: _content)),
-                      ],
+                  child: Material(
+                    color:
+                        widget.backgroundColor ??
+                        bottomSheetTheme.backgroundColor ??
+                        theme.colorScheme.surfaceContainerLow,
+                    elevation:
+                        widget.elevation ?? bottomSheetTheme.elevation ?? 1.0,
+                    shadowColor:
+                        widget.shadowColor ??
+                        bottomSheetTheme.shadowColor ??
+                        Colors.transparent,
+                    surfaceTintColor:
+                        widget.surfaceTintColor ??
+                        bottomSheetTheme.surfaceTintColor ??
+                        Colors.transparent,
+                    shape: widget.shape ?? bottomSheetTheme.shape,
+                    clipBehavior:
+                        widget.clipBehavior ??
+                        bottomSheetTheme.clipBehavior ??
+                        Clip.none,
+                    child: ConstrainedBox(
+                      constraints: sheetConstraints,
+                      child: Column(
+                        children: [
+                          if (showHandle) _buildDragHandle(context),
+                          _header,
+                          Expanded(child: SizedBox.expand(child: _content)),
+                        ],
+                      ),
                     ),
-                    backgroundColor: widget.backgroundColor,
-                    elevation: widget.elevation,
-                    shape: widget.shape,
-                    clipBehavior: widget.clipBehavior,
-                    animationController: null,
-                    enableDrag: false,
-                    onClosing: () {},
                   ),
                 ),
               ),
@@ -572,51 +568,35 @@ class _OverBottomSheetState extends State<OverBottomSheet>
 
 // endregion
 
-// region Private Extensions
-
-extension on OverBottomSheetSizeOption {
-  BoxConstraints _boxConstraints(BoxConstraints constraints) => switch (this) {
-    OverBottomSheetSizeOptionFix(
-      maxWidth: final maxWidth,
-      minWidth: final minWidth,
-      maxHeight: final maxHeight,
-      minHeight: final minHeight,
-    ) =>
-      BoxConstraints(
-        maxWidth: maxWidth,
-        minWidth: minWidth,
-        maxHeight: maxHeight,
-        minHeight: minHeight,
-      ),
-    OverBottomSheetSizeOptionRatio(
-      maxWidth: final maxWidth,
-      minWidth: final minWidth,
-      maxHeight: final maxHeight,
-      minHeight: final minHeight,
-    ) =>
-      BoxConstraints(
-        maxWidth: constraints.maxWidth * maxWidth,
-        minWidth: constraints.maxWidth * minWidth,
-        maxHeight: constraints.maxHeight * maxHeight,
-        minHeight: constraints.maxHeight * minHeight,
-      ),
-    OverBottomSheetSizeOptionMix(
-      maxWidth: final maxWidth,
-      minWidth: final minWidth,
-      maxHeight: final maxHeight,
-      minHeight: final minHeight,
-    ) =>
-      BoxConstraints(
-        maxWidth: maxWidth > 1.0 ? maxWidth : constraints.maxWidth * maxWidth,
-        minWidth: minWidth > 1.0 ? minWidth : constraints.maxWidth * minWidth,
-        maxHeight: maxHeight > 1.0
-            ? maxHeight
-            : constraints.maxHeight * maxHeight,
-        minHeight: minHeight > 1.0
-            ? minHeight
-            : constraints.maxHeight * minHeight,
-      ),
-  };
+/// Calculates the target snap point based on current value and velocity.
+///
+/// This is extracted as a top-level function for testability.
+@visibleForTesting
+double calculateTargetSnap({
+  required double currentValue,
+  required double velocity,
+  required double velocityThreshold,
+  required List<double> sortedSnaps,
+}) {
+  // If velocity is high enough, fling to next snap point
+  if (velocity.abs() > velocityThreshold) {
+    if (velocity < 0) {
+      // Swiping up - find next higher snap point
+      return sortedSnaps.firstWhere(
+        (s) => s > currentValue,
+        orElse: () => sortedSnaps.last,
+      );
+    } else {
+      // Swiping down - find next lower snap point
+      return sortedSnaps.lastWhere(
+        (s) => s < currentValue,
+        orElse: () => sortedSnaps.first,
+      );
+    }
+  } else {
+    // Snap to nearest
+    return sortedSnaps.reduce((a, b) {
+      return (currentValue - a).abs() < (currentValue - b).abs() ? a : b;
+    });
+  }
 }
-
-// endregion

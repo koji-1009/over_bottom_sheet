@@ -11,7 +11,8 @@ A Flutter widget that provides an always-visible, draggable bottom sheet with mu
 * Velocity-based fling gestures
 * Nested scroll handling (scrollable content inside sheet)
 * State callbacks (`onDragStart`, `onDragEnd`, `onSnapComplete`)
-* Flexible size options (fixed, ratio, or mixed)
+* Flexible height/width constraints with auto-detect (>1.0 = pixels, ≤1.0 = ratio)
+* Material 3 theming support (`showDragHandle`, `shadowColor`, `surfaceTintColor`)
 * `ValueNotifier`-based controller for reactive updates
 
 ## Usage
@@ -25,10 +26,8 @@ final controller = OverBottomSheetController();
 
 OverBottomSheet(
   controller: controller,
-  sizeOption: const OverBottomSheetSizeOptionMix(
-    maxHeight: 0.8,
-    minHeight: 100,
-  ),
+  maxHeight: 0.8,   // 80% of parent height
+  minHeight: 100,   // 100px fixed
   header: const Text('Header'),
   content: ListView.builder(
     itemCount: 20,
@@ -43,6 +42,28 @@ OverBottomSheet(
 ```dart
 OverBottomSheet(
   snapPoints: const [0.0, 0.5, 1.0], // closed, half, full
+  // ...
+)
+```
+
+### Width Constraint (PC/Tablet)
+
+```dart
+OverBottomSheet(
+  maxHeight: 0.8,
+  minHeight: 100,
+  width: 600,       // Fixed 600px (clamped to parent)
+  // or
+  width: 0.5,       // 50% of parent width
+  // ...
+)
+```
+
+### Drag Handle
+
+```dart
+OverBottomSheet(
+  showDragHandle: true,  // Material 3 standard drag handle
   // ...
 )
 ```
@@ -92,13 +113,17 @@ controller.close();
 controller.addListener(() => print(controller.value));
 ```
 
-## Size Options
+## Size Constraints
 
-| Option                           | Description                              |
-| -------------------------------- | ---------------------------------------- |
-| `OverBottomSheetSizeOptionFix`   | Fixed pixel values                       |
-| `OverBottomSheetSizeOptionRatio` | Ratio of parent size (0.0-1.0)           |
-| `OverBottomSheetSizeOptionMix`   | Auto-detect: >1.0 = pixels, ≤1.0 = ratio |
+Values are auto-detected:
+- `> 1.0` → Fixed pixels
+- `≤ 1.0` → Ratio of parent size
+
+| Property    | Description                      |
+| ----------- | -------------------------------- |
+| `maxHeight` | Maximum sheet height (required)  |
+| `minHeight` | Minimum sheet height (required)  |
+| `width`     | Sheet width (optional, defaults to full width) |
 
 ## API Reference
 
@@ -109,10 +134,15 @@ See the [API documentation](https://pub.dev/documentation/over_bottom_sheet/late
 | Property                     | Type                         | Description                                |
 | ---------------------------- | ---------------------------- | ------------------------------------------ |
 | `controller`                 | `OverBottomSheetController?` | Controls sheet position                    |
-| `sizeOption`                 | `OverBottomSheetSizeOption`  | Size constraints (required)                |
+| `maxHeight`                  | `double`                     | Max height (required)                      |
+| `minHeight`                  | `double`                     | Min height (required)                      |
+| `width`                      | `double?`                    | Sheet width (optional)                     |
 | `snapPoints`                 | `List<double>`               | Snap positions (default: `[0.0, 1.0]`)     |
 | `handleNestedScroll`         | `bool`                       | Enable nested scroll handling              |
 | `velocityThreshold`          | `double`                     | Fling detection threshold (default: 300.0) |
+| `showDragHandle`             | `bool?`                      | Show Material 3 drag handle                |
+| `shadowColor`                | `Color?`                     | Sheet shadow color                         |
+| `surfaceTintColor`           | `Color?`                     | Material 3 surface tint                    |
 | `onDragStart`                | `VoidCallback?`              | Called when drag begins                    |
 | `onDragEnd`                  | `void Function(double)?`     | Called with target snap ratio              |
 | `onSnapComplete`             | `void Function(double)?`     | Called after snap animation completes      |
