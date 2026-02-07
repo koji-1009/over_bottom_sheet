@@ -18,6 +18,10 @@ A Flutter widget that provides an always-visible, draggable bottom sheet with mu
 * Material 3 theming support (`showDragHandle`, `shadowColor`, `surfaceTintColor`)
 * `ValueNotifier`-based controller for reactive updates
 
+## Demo
+
+![Live Demo](https://koji-1009.github.io/over_bottom_sheet/)
+
 ## Usage
 
 ### Basic Example
