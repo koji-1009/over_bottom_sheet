@@ -4,6 +4,7 @@
 * **BREAKING**: Consolidated all code into single `over_bottom_sheet.dart` file.
 * Added `snapPoints` for multiple snap positions (e.g., `[0.0, 0.5, 1.0]`).
 * Added `handleNestedScroll` for content scroll/sheet drag conflict handling.
+* Added `onDragStart`, `onDragEnd`, `onSnapComplete` callbacks for state monitoring.
 * Added velocity-based fling to next snap point.
 * Refactored controller to use callback pattern instead of state attachment.
 * Improved animation system using Flutter's `AnimationController`.

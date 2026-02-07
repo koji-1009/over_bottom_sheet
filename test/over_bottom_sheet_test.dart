@@ -408,4 +408,91 @@ void main() {
       expect(find.text('Child'), findsOneWidget);
     });
   });
+
+  group('State Callbacks', () {
+    testWidgets('onDragStart is called when drag begins', (tester) async {
+      var dragStartCalled = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              onDragStart: () => dragStartCalled = true,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 100));
+      expect(dragStartCalled, true);
+    });
+
+    testWidgets('onDragEnd is called with target snap ratio', (tester) async {
+      double? targetRatio;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              snapPoints: const [0.0, 0.5, 1.0],
+              onDragEnd: (ratio) => targetRatio = ratio,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Drag from 1.0 to ~0.6, should snap to 0.5
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 160));
+      await tester.pump();
+
+      expect(targetRatio, 0.5);
+    });
+
+    testWidgets('onSnapComplete is called after animation finishes', (
+      tester,
+    ) async {
+      double? completedRatio;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              onSnapComplete: (ratio) => completedRatio = ratio,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Drag and release
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 200));
+      await tester.pump();
+
+      // Not called yet (animation in progress)
+      expect(completedRatio, isNull);
+
+      // Wait for animation to complete
+      await tester.pumpAndSettle();
+
+      // Now it should be called
+      expect(completedRatio, isNotNull);
+    });
+  });
 }
