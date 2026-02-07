@@ -485,6 +485,7 @@ class _OverBottomSheetState extends State<OverBottomSheet>
                 child: child,
               ),
               child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onVerticalDragStart: (_) {
                   _animationController?.stop();
                   widget.onDragStart?.call();
