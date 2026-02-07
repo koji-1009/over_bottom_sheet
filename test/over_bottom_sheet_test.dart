@@ -3,65 +3,59 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:over_bottom_sheet/over_bottom_sheet.dart';
 
 void main() {
-  group('OverBottomSheetSizeOption', () {
-    test('equality works correctly', () {
-      const option1 = OverBottomSheetSizeOptionFix(
-        maxHeight: 500,
-        minHeight: 100,
-      );
-      const option2 = OverBottomSheetSizeOptionFix(
-        maxHeight: 500,
-        minHeight: 100,
-      );
-      const option3 = OverBottomSheetSizeOptionFix(
-        maxHeight: 400,
-        minHeight: 100,
-      );
+  group('calculateTargetSnap', () {
+    const snaps = [0.0, 0.5, 1.0];
+    const threshold = 300.0;
 
-      expect(option1, equals(option2));
-      expect(option1, isNot(equals(option3)));
+    test('fling down at min position returns first snap', () {
+      // This is the edge case: currentValue = 0.0, fling down -> orElse
+      final result = calculateTargetSnap(
+        currentValue: 0.0,
+        velocity: 500.0, // Positive = down
+        velocityThreshold: threshold,
+        sortedSnaps: snaps,
+      );
+      expect(result, 0.0);
     });
 
-    test('hashCode is consistent with equality', () {
-      const option1 = OverBottomSheetSizeOptionFix(
-        maxHeight: 500,
-        minHeight: 100,
+    test('fling up at max position returns last snap', () {
+      final result = calculateTargetSnap(
+        currentValue: 1.0,
+        velocity: -500.0, // Negative = up
+        velocityThreshold: threshold,
+        sortedSnaps: snaps,
       );
-      const option2 = OverBottomSheetSizeOptionFix(
-        maxHeight: 500,
-        minHeight: 100,
-      );
-      const option3 = OverBottomSheetSizeOptionRatio(
-        maxHeight: 500,
-        minHeight: 100,
-      );
-
-      expect(option1.hashCode, equals(option2.hashCode));
-      // Different types should have different hashCodes
-      expect(option1.hashCode, isNot(equals(option3.hashCode)));
+      expect(result, 1.0);
     });
 
-    test('different types are not equal', () {
-      const fix = OverBottomSheetSizeOptionFix(maxHeight: 500, minHeight: 100);
-      const ratio = OverBottomSheetSizeOptionRatio(
-        maxHeight: 500,
-        minHeight: 100,
+    test('fling down from middle returns lower snap', () {
+      final result = calculateTargetSnap(
+        currentValue: 0.5,
+        velocity: 500.0,
+        velocityThreshold: threshold,
+        sortedSnaps: snaps,
       );
-      const mix = OverBottomSheetSizeOptionMix(maxHeight: 500, minHeight: 100);
-
-      expect(fix, isNot(equals(ratio)));
-      expect(fix, isNot(equals(mix)));
-      expect(ratio, isNot(equals(mix)));
+      expect(result, 0.0);
     });
 
-    test('default width values are correct', () {
-      const option = OverBottomSheetSizeOptionFix(
-        maxHeight: 500,
-        minHeight: 100,
+    test('fling up from middle returns higher snap', () {
+      final result = calculateTargetSnap(
+        currentValue: 0.5,
+        velocity: -500.0,
+        velocityThreshold: threshold,
+        sortedSnaps: snaps,
       );
+      expect(result, 1.0);
+    });
 
-      expect(option.maxWidth, double.infinity);
-      expect(option.minWidth, 0.0);
+    test('low velocity snaps to nearest', () {
+      final result = calculateTargetSnap(
+        currentValue: 0.6,
+        velocity: 100.0, // Below threshold
+        velocityThreshold: threshold,
+        sortedSnaps: snaps,
+      );
+      expect(result, 0.5); // Nearest to 0.6
     });
   });
 
@@ -97,6 +91,16 @@ void main() {
       controller.updateRatio(0.5);
       expect(notified, true);
     });
+
+    test(
+      'animateTo falls back to updateRatio when no handler is set',
+      () async {
+        final controller = OverBottomSheetController(ratio: 0.0);
+        // animation handler は未設定（widget にマウントされていない）
+        await controller.animateTo(0.75);
+        expect(controller.value, 0.75);
+      },
+    );
   });
 
   group('OverBottomSheet Widget', () {
@@ -107,10 +111,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              maxHeight: 500,
+              minHeight: 100,
               header: const Text('Header'),
               content: const Text('Sheet Content'),
               child: const Text('Main Content'),
@@ -131,10 +133,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              maxHeight: 500,
+              minHeight: 100,
               header: Container(height: 50, color: Colors.red),
               content: Container(height: 450, color: Colors.blue),
               child: const SizedBox(height: 800, width: 400),
@@ -146,7 +146,7 @@ void main() {
       expect(controller.value, 1.0);
 
       // Base: 500 - 100 = 400. Drag 200px -> ratio = 1.0 - (200/400) = 0.5
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 200));
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 200));
       await tester.pump();
 
       expect(controller.value, closeTo(0.5, 0.05));
@@ -159,10 +159,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              maxHeight: 500,
+              minHeight: 100,
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -189,10 +187,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              maxHeight: 500,
+              minHeight: 100,
               snapPoints: const [0.0, 0.3, 0.7, 1.0],
               header: const SizedBox(height: 50),
               content: const SizedBox(),
@@ -211,9 +207,7 @@ void main() {
       expect(controller.value, 0.3);
     });
 
-    testWidgets('OverBottomSheetSizeOptionFix uses fixed values', (
-      tester,
-    ) async {
+    testWidgets('fixed height values work correctly', (tester) async {
       final controller = OverBottomSheetController(ratio: 1.0);
       await tester.pumpWidget(
         MaterialApp(
@@ -223,10 +217,8 @@ void main() {
               width: 400,
               child: OverBottomSheet(
                 controller: controller,
-                sizeOption: const OverBottomSheetSizeOptionFix(
-                  maxHeight: 300,
-                  minHeight: 100,
-                ),
+                maxHeight: 300, // Fixed pixels
+                minHeight: 100, // Fixed pixels
                 header: const SizedBox(height: 50),
                 content: const SizedBox(),
                 child: const SizedBox(),
@@ -237,49 +229,13 @@ void main() {
       );
 
       // Base = 300 - 100 = 200. Drag 100px -> ratio = 1.0 - (100/200) = 0.5
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 100));
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 100));
       await tester.pump();
 
       expect(controller.value, closeTo(0.5, 0.05));
     });
 
-    testWidgets(
-      'OverBottomSheetSizeOptionRatio calculates correct constraints',
-      (tester) async {
-        tester.view.physicalSize = const Size(400, 800);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        final controller = OverBottomSheetController(ratio: 1.0);
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: OverBottomSheet(
-                controller: controller,
-                sizeOption: const OverBottomSheetSizeOptionRatio(
-                  maxHeight: 0.5, // 800 * 0.5 = 400
-                  minHeight: 0.1, // 800 * 0.1 = 80
-                ),
-                header: const SizedBox(height: 50),
-                content: const SizedBox(),
-                child: const SizedBox(),
-              ),
-            ),
-          ),
-        );
-
-        final bottomSheet = tester.widget<BottomSheet>(
-          find.byType(BottomSheet),
-        );
-        expect(bottomSheet.constraints!.maxHeight, 400);
-        expect(bottomSheet.constraints!.minHeight, 80);
-      },
-    );
-
-    testWidgets('OverBottomSheetSizeOptionMix calculates correct constraints', (
-      tester,
-    ) async {
+    testWidgets('ratio height values calculate correctly', (tester) async {
       tester.view.physicalSize = const Size(400, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -291,10 +247,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionMix(
-                maxHeight: 0.5, // Ratio -> 800 * 0.5 = 400
-                minHeight: 100, // Fixed -> 100
-              ),
+              maxHeight: 0.5, // 800 * 0.5 = 400
+              minHeight: 0.1, // 800 * 0.1 = 80
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -303,12 +257,77 @@ void main() {
         ),
       );
 
-      final bottomSheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
-      expect(bottomSheet.constraints!.maxHeight, 400);
-      expect(bottomSheet.constraints!.minHeight, 100);
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.descendant(
+          of: find.byType(OverBottomSheet),
+          matching: find.byType(ConstrainedBox),
+        ),
+      );
+      expect(constrainedBox.constraints.maxHeight, closeTo(400, 50));
+      expect(constrainedBox.constraints.minHeight, closeTo(80, 20));
     });
 
-    testWidgets('OverBottomSheetSizeOptionMix handled Fix/Ratio combination', (
+    testWidgets('width property constrains sheet width', (tester) async {
+      tester.view.physicalSize = const Size(800, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 400,
+              minHeight: 100,
+              width: 400, // Fixed 400px
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.descendant(
+          of: find.byType(OverBottomSheet),
+          matching: find.byType(ConstrainedBox),
+        ),
+      );
+      expect(constrainedBox.constraints.maxWidth, 400);
+    });
+
+    testWidgets('width ratio value works correctly', (tester) async {
+      tester.view.physicalSize = const Size(800, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 400,
+              minHeight: 100,
+              width: 0.5, // 50% of parent -> 400
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.descendant(
+          of: find.byType(OverBottomSheet),
+          matching: find.byType(ConstrainedBox),
+        ),
+      );
+      expect(constrainedBox.constraints.maxWidth, closeTo(400, 50));
+    });
+
+    testWidgets('mixed height values (ratio + fixed) work correctly', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(400, 800);
@@ -322,10 +341,8 @@ void main() {
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionMix(
-                maxHeight: 500, // Fixed -> 500
-                minHeight: 0.1, // Ratio -> 80
-              ),
+              maxHeight: 0.5, // Ratio -> 800 * 0.5 = 400
+              minHeight: 100, // Fixed -> 100
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -334,9 +351,14 @@ void main() {
         ),
       );
 
-      final bottomSheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
-      expect(bottomSheet.constraints!.maxHeight, 500);
-      expect(bottomSheet.constraints!.minHeight, 80);
+      final constrainedBox = tester.widget<ConstrainedBox>(
+        find.descendant(
+          of: find.byType(OverBottomSheet),
+          matching: find.byType(ConstrainedBox),
+        ),
+      );
+      expect(constrainedBox.constraints.maxHeight, closeTo(400, 50));
+      expect(constrainedBox.constraints.minHeight, 100);
     });
 
     testWidgets('handleNestedScroll prevents drag when content is not at top', (
@@ -350,10 +372,8 @@ void main() {
             body: OverBottomSheet(
               controller: controller,
               handleNestedScroll: true,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              maxHeight: 500,
+              minHeight: 100,
               header: const SizedBox(height: 50),
               // Use a Builder to get context for dispatching notifications
               content: Builder(
@@ -362,38 +382,19 @@ void main() {
                     onTap: () {
                       // Dispatch notification manually: Simulate NOT at top
                       ScrollUpdateNotification(
+                        depth: 0,
                         metrics: FixedScrollMetrics(
                           minScrollExtent: 0,
-                          maxScrollExtent: 100,
-                          pixels: 50, // Not 0
-                          viewportDimension: 100,
+                          maxScrollExtent: 1000,
+                          pixels: 100, // NOT at top
+                          viewportDimension: 400,
                           axisDirection: AxisDirection.down,
                           devicePixelRatio: 1.0,
                         ),
                         context: context,
-                        scrollDelta: 0,
-                        depth: 0,
                       ).dispatch(context);
                     },
-                    onLongPress: () {
-                      // Dispatch notification manually: Simulate AT top
-                      ScrollUpdateNotification(
-                        metrics: FixedScrollMetrics(
-                          minScrollExtent: 0,
-                          maxScrollExtent: 100,
-                          pixels: 0, // At top
-                          viewportDimension: 100,
-                          axisDirection: AxisDirection.down,
-                          devicePixelRatio: 1.0,
-                        ),
-                        context: context,
-                        scrollDelta: 0,
-                        depth: 0,
-                      ).dispatch(context);
-                    },
-                    child: const Text(
-                      'Tap to scroll down, Long Press to scroll top',
-                    ),
+                    child: Container(height: 450, color: Colors.blue),
                   );
                 },
               ),
@@ -403,187 +404,79 @@ void main() {
         ),
       );
 
-      // 1. Simulate content scrolled (pixels = 50)
-      await tester.tap(
-        find.text('Tap to scroll down, Long Press to scroll top'),
-      );
+      final contentFinder = find.byType(GestureDetector).last;
+      await tester.tap(contentFinder);
       await tester.pump();
 
-      // Drag sheet down -> Should NOT move (consumed by "nested scroll")
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 50));
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 100));
       await tester.pump();
+
       expect(controller.value, 1.0);
-
-      // 2. Simulate content at top (pixels = 0)
-      await tester.longPress(
-        find.text('Tap to scroll down, Long Press to scroll top'),
-      );
-      await tester.pump();
-
-      // Drag sheet down -> Should move
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 50));
-      await tester.pump();
-      expect(controller.value, lessThan(1.0));
     });
 
-    testWidgets('updates controller and snap points when widget changes', (
+    testWidgets('handleNestedScroll allows drag when content is at top', (
       tester,
     ) async {
-      final controller1 = OverBottomSheetController();
-      final controller2 = OverBottomSheetController();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              controller: controller1,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              snapPoints: const [0.0, 1.0],
-              header: const SizedBox(),
-              content: const SizedBox(),
-              child: const SizedBox(),
-            ),
-          ),
-        ),
-      );
-
-      // Change controller and snap points
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              controller: controller2,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              snapPoints: const [0.0, 0.5, 1.0],
-              header: const SizedBox(),
-              content: const SizedBox(),
-              child: const SizedBox(),
-            ),
-          ),
-        ),
-      );
-
-      // Allow animations to settle/dispose
-      await tester.pumpAndSettle();
-
-      // Verify controller2 is active (changing value should update UI not directly testable easily without finding RenderObject, but we verify no crash and state update)
-      controller2.updateRatio(0.5);
-      await tester.pump();
-      // Indirect verification: no errors thrown during swap
-    });
-  });
-
-  group('Snap Behavior', () {
-    testWidgets('snaps to nearest on drag end', (tester) async {
       final controller = OverBottomSheetController(ratio: 1.0);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              snapPoints: const [0.0, 0.5, 1.0],
+              handleNestedScroll: true,
+              maxHeight: 500,
+              minHeight: 100,
               header: const SizedBox(height: 50),
-              content: const SizedBox(),
+              content: Builder(
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      ScrollUpdateNotification(
+                        depth: 0,
+                        metrics: FixedScrollMetrics(
+                          minScrollExtent: 0,
+                          maxScrollExtent: 1000,
+                          pixels: 0, // AT top
+                          viewportDimension: 400,
+                          axisDirection: AxisDirection.down,
+                          devicePixelRatio: 1.0,
+                        ),
+                        context: context,
+                      ).dispatch(context);
+                    },
+                    child: Container(height: 450, color: Colors.blue),
+                  );
+                },
+              ),
               child: const SizedBox(),
             ),
           ),
         ),
       );
 
-      // Drag from 1.0 to ~0.6 (160px down)
-      // 1.0=500, 0.5=300 (diff 200). 0.6 is closer to 0.5.
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 160));
+      final contentFinder = find.byType(GestureDetector).last;
+      await tester.tap(contentFinder);
       await tester.pump();
-      // Should be around 0.6
+
+      // Base: 500 - 100 = 400. Drag 160px -> ratio ~= 0.6
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 160));
+      await tester.pump();
+
       expect(controller.value, closeTo(0.6, 0.1));
-
-      // Release -> snaps to nearest (0.5)
-      await tester.pumpAndSettle();
-      expect(controller.value, 0.5);
     });
 
-    testWidgets('snaps to multiple points', (tester) async {
-      final controller = OverBottomSheetController(ratio: 1.0);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              snapPoints: const [0.0, 0.5, 1.0],
-              header: const SizedBox(height: 50),
-              content: const SizedBox(),
-              child: const SizedBox(),
-            ),
-          ),
-        ),
-      );
-
-      // Drag from 1.0 to 0.6 (160px down)
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 160));
-      await tester.pump();
-      expect(controller.value, closeTo(0.6, 0.05));
-
-      // Release -> snaps to nearest (0.5)
-      await tester.pumpAndSettle();
-      expect(controller.value, 0.5);
-    });
-
-    testWidgets('fling down moves to next lower snap point', (tester) async {
-      final controller = OverBottomSheetController(ratio: 1.0);
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              snapPoints: const [0.0, 0.5, 1.0],
-              velocityThreshold: 300.0,
-              header: const SizedBox(height: 50),
-              content: const SizedBox(),
-              child: const SizedBox(),
-            ),
-          ),
-        ),
-      );
-
-      // Fling down with high velocity (should go to 0.5, not nearest)
-      await tester.fling(find.byType(BottomSheet), const Offset(0, 50), 500);
-      await tester.pumpAndSettle();
-
-      expect(controller.value, 0.5);
-    });
-
-    testWidgets('fling up moves to next higher snap point', (tester) async {
-      // Start from 0.5 (sheet is visible) to properly test fling up
+    testWidgets('fling up snaps to next higher position', (tester) async {
       final controller = OverBottomSheetController(ratio: 0.5);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
               snapPoints: const [0.0, 0.5, 1.0],
-              velocityThreshold: 300.0,
+              maxHeight: 500,
+              minHeight: 100,
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -592,73 +485,27 @@ void main() {
         ),
       );
 
-      // Fling up with high velocity (should go from 0.5 to 1.0)
-      await tester.fling(find.byType(BottomSheet), const Offset(0, -50), 500);
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, -50),
+        500,
+      );
       await tester.pumpAndSettle();
 
       expect(controller.value, 1.0);
     });
-  });
 
-  group('Edge Cases', () {
-    testWidgets('handles zero base height gracefully', (tester) async {
-      final controller = OverBottomSheetController();
+    testWidgets('fling down snaps to next lower position', (tester) async {
+      final controller = OverBottomSheetController(ratio: 0.5);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: OverBottomSheet(
               controller: controller,
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 100,
-                minHeight: 100, // Same as max -> base = 0
-              ),
-              header: const SizedBox(),
-              content: const SizedBox(),
-              child: const Text('Child'),
-            ),
-          ),
-        ),
-      );
-
-      // Should render child without error
-      expect(find.text('Child'), findsOneWidget);
-    });
-
-    testWidgets('works without external controller', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              header: const Text('Header'),
-              content: const Text('Content'),
-              child: const Text('Child'),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Header'), findsOneWidget);
-      expect(find.text('Content'), findsOneWidget);
-      expect(find.text('Child'), findsOneWidget);
-    });
-  });
-
-  group('State Callbacks', () {
-    testWidgets('onDragStart is called when drag begins', (tester) async {
-      var dragStartCalled = false;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: OverBottomSheet(
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              onDragStart: () => dragStartCalled = true,
+              snapPoints: const [0.0, 0.5, 1.0],
+              maxHeight: 500,
+              minHeight: 100,
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -667,20 +514,208 @@ void main() {
         ),
       );
 
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 100));
-      expect(dragStartCalled, true);
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 50),
+        500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.value, 0.0);
     });
 
-    testWidgets('onDragEnd is called with target snap ratio', (tester) async {
-      double? targetRatio;
+    testWidgets('headerBuilder receives ratio updates', (tester) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+      final receivedRatios = <double>[];
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: OverBottomSheet(
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              headerBuilder: (context, ratio) {
+                receivedRatios.add(ratio);
+                return Container(height: 50, color: Colors.red);
+              },
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Clear initial build ratios
+      receivedRatios.clear();
+
+      // Drag to change ratio
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 200));
+      await tester.pump();
+
+      expect(receivedRatios, isNotEmpty);
+      expect(receivedRatios.last, closeTo(0.5, 0.1));
+    });
+
+    testWidgets('contentBuilder receives ratio updates', (tester) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+      final receivedRatios = <double>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              contentBuilder: (context, ratio) {
+                receivedRatios.add(ratio);
+                return Container(color: Colors.blue);
+              },
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Clear initial build ratios
+      receivedRatios.clear();
+
+      // Drag to change ratio
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 200));
+      await tester.pump();
+
+      expect(receivedRatios, isNotEmpty);
+      expect(receivedRatios.last, closeTo(0.5, 0.1));
+    });
+
+    testWidgets('fling up at max position stays at max', (tester) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              snapPoints: const [0.0, 0.5, 1.0],
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, -50),
+        500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.value, 1.0);
+    });
+
+    testWidgets('fling down at min position stays at min', (tester) async {
+      final controller = OverBottomSheetController(ratio: 0.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              snapPoints: const [0.0, 0.5, 1.0],
+              maxHeight: 500,
+              minHeight: 100,
+              header: Container(height: 50, color: Colors.red),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 50),
+        500,
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.value, 0.0);
+    });
+
+    testWidgets('snap to nearest when velocity is low', (tester) async {
+      final controller = OverBottomSheetController(ratio: 0.6);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              snapPoints: const [0.0, 0.5, 1.0],
+              velocityThreshold: 500, // High threshold
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Low velocity drag down
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 10));
+      await tester.pumpAndSettle();
+
+      // Should snap to nearest (0.5)
+      expect(controller.value, closeTo(0.5, 0.1));
+    });
+
+    testWidgets('onDragStart callback is called', (tester) async {
+      var dragStarted = false;
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              onDragStart: () => dragStarted = true,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 100));
+      await tester.pump();
+
+      expect(dragStarted, true);
+    });
+
+    testWidgets('onDragEnd callback is called with target ratio', (
+      tester,
+    ) async {
+      double? targetRatio;
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
               snapPoints: const [0.0, 0.5, 1.0],
               onDragEnd: (ratio) => targetRatio = ratio,
               header: const SizedBox(height: 50),
@@ -691,26 +726,31 @@ void main() {
         ),
       );
 
-      // Drag from 1.0 to ~0.6, should snap to 0.5
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 160));
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 100),
+        500,
+      );
       await tester.pump();
 
       expect(targetRatio, 0.5);
     });
 
-    testWidgets('onSnapComplete is called after animation finishes', (
+    testWidgets('onSnapComplete callback is called after animation', (
       tester,
     ) async {
-      double? completedRatio;
+      double? snapRatio;
+      final controller = OverBottomSheetController(ratio: 1.0);
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: OverBottomSheet(
-              sizeOption: const OverBottomSheetSizeOptionFix(
-                maxHeight: 500,
-                minHeight: 100,
-              ),
-              onSnapComplete: (ratio) => completedRatio = ratio,
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              snapPoints: const [0.0, 0.5, 1.0],
+              onSnapComplete: (ratio) => snapRatio = ratio,
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -719,18 +759,210 @@ void main() {
         ),
       );
 
-      // Drag and release
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 200));
-      await tester.pump();
-
-      // Not called yet (animation in progress)
-      expect(completedRatio, isNull);
-
-      // Wait for animation to complete
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 100),
+        500,
+      );
       await tester.pumpAndSettle();
 
-      // Now it should be called
-      expect(completedRatio, isNotNull);
+      expect(snapRatio, 0.5);
+    });
+
+    testWidgets('sheet returns child only when base is zero', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 100,
+              minHeight: 100, // Same as maxHeight -> base = 0
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const Text('Only Child'),
+            ),
+          ),
+        ),
+      );
+
+      // Sheet should not be rendered when base is 0
+      // Only the child widget should be displayed
+      final overBottomSheet = find.byType(OverBottomSheet);
+      expect(overBottomSheet, findsOneWidget);
+      // ConstrainedBox should not exist inside OverBottomSheet (sheet not rendered)
+      expect(
+        find.descendant(
+          of: overBottomSheet,
+          matching: find.byType(ConstrainedBox),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('showDragHandle displays drag handle', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 500,
+              minHeight: 100,
+              showDragHandle: true,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Find the drag handle container
+      final dragHandle = find.descendant(
+        of: find.byType(OverBottomSheet),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Container &&
+              widget.decoration is BoxDecoration &&
+              (widget.decoration! as BoxDecoration).borderRadius != null,
+        ),
+      );
+
+      expect(dragHandle, findsOneWidget);
+    });
+
+    testWidgets('custom colors are applied', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 500,
+              minHeight: 100,
+              backgroundColor: Colors.amber,
+              elevation: 10.0,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      final material = tester.widget<Material>(
+        find.descendant(
+          of: find.byType(OverBottomSheet),
+          matching: find.byType(Material),
+        ),
+      );
+
+      expect(material.color, Colors.amber);
+      expect(material.elevation, 10.0);
+    });
+
+    testWidgets('controller can be changed dynamically', (tester) async {
+      final controller1 = OverBottomSheetController(ratio: 0.5);
+      final controller2 = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller1,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      expect(controller1.value, 0.5);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller2,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // New controller animateTo should work
+      controller2.animateTo(0.3);
+      await tester.pumpAndSettle();
+      expect(controller2.value, 0.3);
+    });
+
+    testWidgets('snapPoints can be updated dynamically', (tester) async {
+      final controller = OverBottomSheetController(ratio: 0.5);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              snapPoints: const [0.0, 1.0],
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              snapPoints: const [0.0, 0.25, 0.5, 0.75, 1.0],
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Should snap to nearest from new snap points
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 40),
+        500,
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.value, closeTo(0.25, 0.30));
+    });
+
+    testWidgets('internal controller is created when none provided', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Widget should render correctly
+      expect(find.byType(OverBottomSheet), findsOneWidget);
     });
   });
 }

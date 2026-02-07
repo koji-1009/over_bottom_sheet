@@ -57,11 +57,9 @@ class _MyHomePageState extends State<MyHomePage> {
         snapPoints: const [0.0, 0.5, 1.0],
         // Enable nested scroll handling
         handleNestedScroll: true,
-        sizeOption: const OverBottomSheetSizeOptionMix(
-          maxHeight: 0.85,
-          minHeight: 80,
-          maxWidth: 1.0,
-        ),
+        maxHeight: 0.85,
+        minHeight: 80,
+        showDragHandle: false,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
