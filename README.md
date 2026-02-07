@@ -1,8 +1,11 @@
 # OverBottomSheet
 
-A Flutter widget that provides an always-visible, draggable bottom sheet with multiple snap points and nested scroll support.
-
 [![pub package](https://img.shields.io/pub/v/over_bottom_sheet.svg)](https://pub.dev/packages/over_bottom_sheet)
+[![GitHub license](https://img.shields.io/github/license/koji-1009/over_bottom_sheet)](https://github.com/koji-1009/over_bottom_sheet/blob/main/LICENSE)
+[![CI](https://github.com/koji-1009/over_bottom_sheet/actions/workflows/analyze.yaml/badge.svg)](https://github.com/koji-1009/over_bottom_sheet/actions/workflows/analyze.yaml)
+[![codecov](https://codecov.io/gh/koji-1009/over_bottom_sheet/branch/main/graph/badge.svg)](https://codecov.io/gh/koji-1009/over_bottom_sheet)
+
+A Flutter widget that provides an always-visible, draggable bottom sheet with multiple snap points and nested scroll support.
 
 ## Features
 
