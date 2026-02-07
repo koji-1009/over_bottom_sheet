@@ -10,6 +10,7 @@ A Flutter widget that provides an always-visible, draggable bottom sheet with mu
 * Multiple snap points (e.g., closed, half-open, full)
 * Velocity-based fling gestures
 * Nested scroll handling (scrollable content inside sheet)
+* State callbacks (`onDragStart`, `onDragEnd`, `onSnapComplete`)
 * Flexible size options (fixed, ratio, or mixed)
 * `ValueNotifier`-based controller for reactive updates
 
@@ -58,6 +59,25 @@ OverBottomSheet(
 )
 ```
 
+### State Callbacks
+
+Monitor drag and snap events for UI synchronization (e.g., map camera):
+
+```dart
+OverBottomSheet(
+  onDragStart: () {
+    // User started dragging
+  },
+  onDragEnd: (targetRatio) {
+    // User released, will snap to targetRatio
+  },
+  onSnapComplete: (ratio) {
+    // Animation finished at ratio
+  },
+  // ...
+)
+```
+
 ### Controller Methods
 
 ```dart
@@ -93,6 +113,9 @@ See the [API documentation](https://pub.dev/documentation/over_bottom_sheet/late
 | `snapPoints`                 | `List<double>`               | Snap positions (default: `[0.0, 1.0]`)     |
 | `handleNestedScroll`         | `bool`                       | Enable nested scroll handling              |
 | `velocityThreshold`          | `double`                     | Fling detection threshold (default: 300.0) |
+| `onDragStart`                | `VoidCallback?`              | Called when drag begins                    |
+| `onDragEnd`                  | `void Function(double)?`     | Called with target snap ratio              |
+| `onSnapComplete`             | `void Function(double)?`     | Called after snap animation completes      |
 | `header` / `headerBuilder`   | `Widget` / `Function`        | Header widget                              |
 | `content` / `contentBuilder` | `Widget` / `Function`        | Sheet content                              |
 | `child`                      | `Widget`                     | Background content (required)              |

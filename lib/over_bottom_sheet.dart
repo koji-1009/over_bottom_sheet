@@ -270,6 +270,9 @@ class OverBottomSheet extends StatefulWidget {
     this.velocityThreshold = 300.0,
     this.snapPoints = const [0.0, 1.0],
     this.handleNestedScroll = false,
+    this.onDragStart,
+    this.onDragEnd,
+    this.onSnapComplete,
   }) : assert(snapPoints.length >= 2, 'snapPoints must have at least 2 values');
 
   /// Controller for programmatic control of the sheet position.
@@ -335,6 +338,20 @@ class OverBottomSheet extends StatefulWidget {
   /// maximum position. Dragging down when content is at the top will
   /// move the sheet instead of scrolling.
   final bool handleNestedScroll;
+
+  /// Called when the user starts dragging the sheet.
+  final VoidCallback? onDragStart;
+
+  /// Called when the user stops dragging the sheet.
+  ///
+  /// The parameter is the snap point that the sheet will animate to.
+  final void Function(double targetRatio)? onDragEnd;
+
+  /// Called when the sheet finishes animating to a snap point.
+  ///
+  /// This is not called if the animation is interrupted by another drag
+  /// or animation.
+  final void Function(double ratio)? onSnapComplete;
 
   @override
   State<OverBottomSheet> createState() => _OverBottomSheetState();
@@ -470,6 +487,7 @@ class _OverBottomSheetState extends State<OverBottomSheet>
               child: GestureDetector(
                 onVerticalDragStart: (_) {
                   _animationController?.stop();
+                  widget.onDragStart?.call();
                 },
                 onVerticalDragUpdate: (details) {
                   // When handleNestedScroll is enabled:
@@ -512,7 +530,10 @@ class _OverBottomSheetState extends State<OverBottomSheet>
                     });
                   }
 
-                  _animateTo(targetSnap);
+                  widget.onDragEnd?.call(targetSnap);
+                  _animateTo(targetSnap).then((_) {
+                    widget.onSnapComplete?.call(targetSnap);
+                  });
                 },
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
