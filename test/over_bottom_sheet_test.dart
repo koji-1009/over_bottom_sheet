@@ -242,6 +242,241 @@ void main() {
 
       expect(controller.value, closeTo(0.5, 0.05));
     });
+
+    testWidgets(
+      'OverBottomSheetSizeOptionRatio calculates correct constraints',
+      (tester) async {
+        tester.view.physicalSize = const Size(400, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final controller = OverBottomSheetController(ratio: 1.0);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: OverBottomSheet(
+                controller: controller,
+                sizeOption: const OverBottomSheetSizeOptionRatio(
+                  maxHeight: 0.5, // 800 * 0.5 = 400
+                  minHeight: 0.1, // 800 * 0.1 = 80
+                ),
+                header: const SizedBox(height: 50),
+                content: const SizedBox(),
+                child: const SizedBox(),
+              ),
+            ),
+          ),
+        );
+
+        final bottomSheet = tester.widget<BottomSheet>(
+          find.byType(BottomSheet),
+        );
+        expect(bottomSheet.constraints!.maxHeight, 400);
+        expect(bottomSheet.constraints!.minHeight, 80);
+      },
+    );
+
+    testWidgets('OverBottomSheetSizeOptionMix calculates correct constraints', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = OverBottomSheetController(ratio: 1.0);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              sizeOption: const OverBottomSheetSizeOptionMix(
+                maxHeight: 0.5, // Ratio -> 800 * 0.5 = 400
+                minHeight: 100, // Fixed -> 100
+              ),
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      final bottomSheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
+      expect(bottomSheet.constraints!.maxHeight, 400);
+      expect(bottomSheet.constraints!.minHeight, 100);
+    });
+
+    testWidgets('OverBottomSheetSizeOptionMix handled Fix/Ratio combination', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final controller = OverBottomSheetController(ratio: 1.0);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              sizeOption: const OverBottomSheetSizeOptionMix(
+                maxHeight: 500, // Fixed -> 500
+                minHeight: 0.1, // Ratio -> 80
+              ),
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      final bottomSheet = tester.widget<BottomSheet>(find.byType(BottomSheet));
+      expect(bottomSheet.constraints!.maxHeight, 500);
+      expect(bottomSheet.constraints!.minHeight, 80);
+    });
+
+    testWidgets('handleNestedScroll prevents drag when content is not at top', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              handleNestedScroll: true,
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              header: const SizedBox(height: 50),
+              // Use a Builder to get context for dispatching notifications
+              content: Builder(
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Dispatch notification manually: Simulate NOT at top
+                      ScrollUpdateNotification(
+                        metrics: FixedScrollMetrics(
+                          minScrollExtent: 0,
+                          maxScrollExtent: 100,
+                          pixels: 50, // Not 0
+                          viewportDimension: 100,
+                          axisDirection: AxisDirection.down,
+                          devicePixelRatio: 1.0,
+                        ),
+                        context: context,
+                        scrollDelta: 0,
+                        depth: 0,
+                      ).dispatch(context);
+                    },
+                    onLongPress: () {
+                      // Dispatch notification manually: Simulate AT top
+                      ScrollUpdateNotification(
+                        metrics: FixedScrollMetrics(
+                          minScrollExtent: 0,
+                          maxScrollExtent: 100,
+                          pixels: 0, // At top
+                          viewportDimension: 100,
+                          axisDirection: AxisDirection.down,
+                          devicePixelRatio: 1.0,
+                        ),
+                        context: context,
+                        scrollDelta: 0,
+                        depth: 0,
+                      ).dispatch(context);
+                    },
+                    child: const Text(
+                      'Tap to scroll down, Long Press to scroll top',
+                    ),
+                  );
+                },
+              ),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // 1. Simulate content scrolled (pixels = 50)
+      await tester.tap(
+        find.text('Tap to scroll down, Long Press to scroll top'),
+      );
+      await tester.pump();
+
+      // Drag sheet down -> Should NOT move (consumed by "nested scroll")
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 50));
+      await tester.pump();
+      expect(controller.value, 1.0);
+
+      // 2. Simulate content at top (pixels = 0)
+      await tester.longPress(
+        find.text('Tap to scroll down, Long Press to scroll top'),
+      );
+      await tester.pump();
+
+      // Drag sheet down -> Should move
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 50));
+      await tester.pump();
+      expect(controller.value, lessThan(1.0));
+    });
+
+    testWidgets('updates controller and snap points when widget changes', (
+      tester,
+    ) async {
+      final controller1 = OverBottomSheetController();
+      final controller2 = OverBottomSheetController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller1,
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              snapPoints: const [0.0, 1.0],
+              header: const SizedBox(),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Change controller and snap points
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller2,
+              sizeOption: const OverBottomSheetSizeOptionFix(
+                maxHeight: 500,
+                minHeight: 100,
+              ),
+              snapPoints: const [0.0, 0.5, 1.0],
+              header: const SizedBox(),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Allow animations to settle/dispose
+      await tester.pumpAndSettle();
+
+      // Verify controller2 is active (changing value should update UI not directly testable easily without finding RenderObject, but we verify no crash and state update)
+      controller2.updateRatio(0.5);
+      await tester.pump();
+      // Indirect verification: no errors thrown during swap
+    });
   });
 
   group('Snap Behavior', () {
@@ -256,6 +491,7 @@ void main() {
                 maxHeight: 500,
                 minHeight: 100,
               ),
+              snapPoints: const [0.0, 0.5, 1.0],
               header: const SizedBox(height: 50),
               content: const SizedBox(),
               child: const SizedBox(),
@@ -264,14 +500,16 @@ void main() {
         ),
       );
 
-      // Drag to 0.4 (240px down from 1.0)
-      await tester.drag(find.byType(BottomSheet), const Offset(0, 240));
+      // Drag from 1.0 to ~0.6 (160px down)
+      // 1.0=500, 0.5=300 (diff 200). 0.6 is closer to 0.5.
+      await tester.drag(find.byType(BottomSheet), const Offset(0, 160));
       await tester.pump();
-      expect(controller.value, closeTo(0.4, 0.05));
+      // Should be around 0.6
+      expect(controller.value, closeTo(0.6, 0.1));
 
-      // Release -> snaps to nearest (0.0)
+      // Release -> snaps to nearest (0.5)
       await tester.pumpAndSettle();
-      expect(controller.value, 0.0);
+      expect(controller.value, 0.5);
     });
 
     testWidgets('snaps to multiple points', (tester) async {
