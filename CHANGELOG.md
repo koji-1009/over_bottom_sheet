@@ -1,3 +1,14 @@
+## 1.0.1
+
+* Fix `animateTo`, `open`, and `close` futures never completing when the animation is interrupted by another animation or by a drag.
+* Fix the header and the drag handle being unable to move the sheet while `handleNestedScroll` is enabled and the content is scrolled away from the top.
+* Fix nested and horizontal scrollables inside `content` being mistaken for the content scroll position when `handleNestedScroll` is enabled.
+* Reuse a single `AnimationController` instead of creating and disposing one per animation.
+* Add assertions for `maxHeight`, `minHeight`, `width`, `velocityThreshold`, and `snapPoints` values.
+* Report a descriptive error when a ratio size is used inside a parent with unbounded height or width.
+* Skip creating the internal controller when a `controller` is provided.
+* Compare `snapPoints` by value so that an equal list does not trigger re-sorting.
+
 ## 1.0.0
 
 * **BREAKING**: Removed `OverBottomSheetSizeOption` classes (`Fix`, `Ratio`, `Mix`).

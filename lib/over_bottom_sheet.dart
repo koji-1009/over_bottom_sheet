@@ -26,8 +26,7 @@
 /// ```
 library;
 
-import 'dart:math';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // region Controller
@@ -68,7 +67,7 @@ class OverBottomSheetController extends ValueNotifier<double> {
   ///
   /// The value is clamped between 0.0 and 1.0.
   void updateRatio(double ratio) {
-    value = min(max(ratio, 0), 1);
+    value = ratio.clamp(0.0, 1.0);
   }
 
   /// Sets the animation handler callback.
@@ -84,13 +83,17 @@ class OverBottomSheetController extends ValueNotifier<double> {
   ///
   /// If no animation handler is attached (widget not mounted),
   /// the ratio is updated immediately without animation.
+  ///
+  /// The returned future completes when the animation finishes, and also
+  /// when it is interrupted by another animation or by a user drag.
   Future<void> animateTo(
     double ratio, {
     Duration? duration,
     Curve? curve,
   }) async {
-    if (_animationHandler != null) {
-      await _animationHandler!(ratio, duration: duration, curve: curve);
+    final handler = _animationHandler;
+    if (handler != null) {
+      await handler(ratio, duration: duration, curve: curve);
     } else {
       updateRatio(ratio);
     }
@@ -166,7 +169,11 @@ class OverBottomSheet extends StatefulWidget {
     this.onDragStart,
     this.onDragEnd,
     this.onSnapComplete,
-  }) : assert(snapPoints.length >= 2, 'snapPoints must have at least 2 values');
+  }) : assert(snapPoints.length >= 2, 'snapPoints must have at least 2 values'),
+       assert(maxHeight > 0, 'maxHeight must be greater than 0'),
+       assert(minHeight >= 0, 'minHeight must not be negative'),
+       assert(width == null || width > 0, 'width must be greater than 0'),
+       assert(velocityThreshold >= 0, 'velocityThreshold must not be negative');
 
   /// Controller for programmatic control of the sheet position.
   ///
@@ -273,9 +280,12 @@ class OverBottomSheet extends StatefulWidget {
 
   /// Whether to enable nested scroll handling.
   ///
-  /// When true, the sheet content can scroll when the sheet is at its
-  /// maximum position. Dragging down when content is at the top will
-  /// move the sheet instead of scrolling.
+  /// When true, dragging over the sheet content does not move the sheet
+  /// while the sheet is at its maximum position and the content is scrolled
+  /// away from the top, so that the content can be scrolled back first.
+  ///
+  /// The header and the drag handle always move the sheet, regardless of
+  /// this flag.
   final bool handleNestedScroll;
 
   /// Called when the user starts dragging the sheet.
@@ -297,9 +307,15 @@ class OverBottomSheet extends StatefulWidget {
 }
 
 class _OverBottomSheetState extends State<OverBottomSheet>
-    with TickerProviderStateMixin {
-  late final _innerController = OverBottomSheetController();
-  AnimationController? _animationController;
+    with SingleTickerProviderStateMixin {
+  static const _defaultDuration = Duration(milliseconds: 250);
+  static const _defaultCurve = Curves.easeOutQuad;
+
+  /// Animation controller reused for every animation of this sheet.
+  late final AnimationController _animationController;
+
+  /// Created only when no controller is provided by the caller.
+  OverBottomSheetController? _innerController;
 
   /// Cached sorted snap points to avoid sorting on every build.
   late List<double> _sortedSnaps;
@@ -308,7 +324,7 @@ class _OverBottomSheetState extends State<OverBottomSheet>
   bool _isContentAtTop = true;
 
   OverBottomSheetController get _controller =>
-      widget.controller ?? _innerController;
+      widget.controller ?? (_innerController ??= OverBottomSheetController());
 
   /// Header widget - recreated on each build to properly handle
   /// context-dependent builders.
@@ -333,12 +349,21 @@ class _OverBottomSheetState extends State<OverBottomSheet>
       );
 
   void _updateSortedSnaps() {
+    assert(
+      widget.snapPoints.every((snap) => snap >= 0.0 && snap <= 1.0),
+      'snapPoints must be between 0.0 and 1.0, but got ${widget.snapPoints}',
+    );
     _sortedSnaps = List<double>.from(widget.snapPoints)..sort();
   }
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: _defaultDuration,
+      value: _controller.value,
+    )..addListener(_onAnimationUpdate);
     _controller.setAnimationHandler(_animateTo);
     _updateSortedSnaps();
   }
@@ -347,22 +372,49 @@ class _OverBottomSheetState extends State<OverBottomSheet>
   void didUpdateWidget(covariant OverBottomSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      (oldWidget.controller ?? _innerController).setAnimationHandler(null);
+      (oldWidget.controller ?? _innerController)?.setAnimationHandler(null);
       _controller.setAnimationHandler(_animateTo);
     }
     // Update cached snap points if changed
-    if (widget.snapPoints != oldWidget.snapPoints) {
+    if (!listEquals(widget.snapPoints, oldWidget.snapPoints)) {
       _updateSortedSnaps();
+    }
+    if (widget.handleNestedScroll != oldWidget.handleNestedScroll) {
+      _isContentAtTop = true;
     }
   }
 
   @override
   void dispose() {
     _controller.setAnimationHandler(null);
-    _animationController?.dispose();
-    _animationController = null;
-    _innerController.dispose();
+    _animationController.dispose();
+    _innerController?.dispose();
     super.dispose();
+  }
+
+  /// Runs the animation and reports whether it ran to completion.
+  ///
+  /// Returns false when the animation is interrupted by another animation,
+  /// by a drag, or by the widget being disposed.
+  Future<bool> _runAnimation(
+    double ratio, {
+    Duration? duration,
+    Curve? curve,
+  }) async {
+    // Restart from the current ratio: a drag updates the controller directly.
+    _animationController
+      ..stop()
+      ..duration = duration ?? _defaultDuration
+      ..value = _controller.value;
+
+    try {
+      await _animationController
+          .animateTo(ratio, curve: curve ?? _defaultCurve)
+          .orCancel;
+      return true;
+    } on TickerCanceled {
+      return false;
+    }
   }
 
   Future<void> _animateTo(
@@ -370,29 +422,11 @@ class _OverBottomSheetState extends State<OverBottomSheet>
     Duration? duration,
     Curve? curve,
   }) async {
-    // Stop any existing animation
-    _animationController?.stop();
-    _animationController?.removeListener(_onAnimationUpdate);
-    _animationController?.dispose();
-
-    // Create new animation controller
-    _animationController = AnimationController(
-      vsync: this,
-      duration: duration ?? const Duration(milliseconds: 250),
-      value: _controller.value,
-    );
-    _animationController!.addListener(_onAnimationUpdate);
-
-    await _animationController!.animateTo(
-      ratio,
-      curve: curve ?? Curves.easeOutQuad,
-    );
+    await _runAnimation(ratio, duration: duration, curve: curve);
   }
 
   void _onAnimationUpdate() {
-    if (_animationController != null) {
-      _controller.updateRatio(_animationController!.value);
-    }
+    _controller.updateRatio(_animationController.value);
   }
 
   BoxConstraints _calculateConstraints(BoxConstraints constraints) {
@@ -419,6 +453,34 @@ class _OverBottomSheetState extends State<OverBottomSheet>
       maxHeight: maxH,
       minHeight: minH,
     );
+  }
+
+  /// Throws a descriptive error when a ratio based size is used inside an
+  /// unbounded parent, where the ratio would resolve to infinity.
+  bool _debugCheckConstraints(BoxConstraints constraints) {
+    assert(() {
+      final usesHeightRatio =
+          widget.maxHeight <= 1.0 || widget.minHeight <= 1.0;
+      if (!constraints.hasBoundedHeight && usesHeightRatio) {
+        throw FlutterError(
+          'OverBottomSheet was given unbounded height, but maxHeight or '
+          'minHeight is a ratio (a value ≤ 1.0).\n'
+          'Either place OverBottomSheet inside a widget that provides a '
+          'bounded height, or use fixed pixel values (> 1.0).',
+        );
+      }
+      final usesWidthRatio = widget.width != null && widget.width! <= 1.0;
+      if (!constraints.hasBoundedWidth && usesWidthRatio) {
+        throw FlutterError(
+          'OverBottomSheet was given unbounded width, but width is a ratio '
+          '(a value ≤ 1.0).\n'
+          'Either place OverBottomSheet inside a widget that provides a '
+          'bounded width, or use a fixed pixel value (> 1.0).',
+        );
+      }
+      return true;
+    }());
+    return true;
   }
 
   Widget _buildDragHandle(BuildContext context) {
@@ -450,6 +512,54 @@ class _OverBottomSheetState extends State<OverBottomSheet>
     );
   }
 
+  void _handleDragStart() {
+    // Interrupt the running animation, if any.
+    _animationController.stop();
+    widget.onDragStart?.call();
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    final targetSnap = calculateTargetSnap(
+      currentValue: _controller.value,
+      velocity: details.primaryVelocity ?? 0,
+      velocityThreshold: widget.velocityThreshold,
+      sortedSnaps: _sortedSnaps,
+    );
+
+    widget.onDragEnd?.call(targetSnap);
+    _runAnimation(targetSnap).then((completed) {
+      if (completed && mounted) {
+        widget.onSnapComplete?.call(targetSnap);
+      }
+    });
+  }
+
+  /// Wraps [child] with the vertical drag handling of the sheet.
+  ///
+  /// When [nestedScrollAware] is true, the drag is ignored while the sheet is
+  /// fully open and the content is scrolled away from the top.
+  Widget _buildDragTarget({
+    required double base,
+    required bool nestedScrollAware,
+    required Widget child,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onVerticalDragStart: (_) => _handleDragStart(),
+      onVerticalDragUpdate: (details) {
+        if (nestedScrollAware &&
+            widget.handleNestedScroll &&
+            _controller.value >= _sortedSnaps.last &&
+            !_isContentAtTop) {
+          return;
+        }
+        _controller.updateRatio(_controller.value - details.delta.dy / base);
+      },
+      onVerticalDragEnd: _handleDragEnd,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -458,16 +568,12 @@ class _OverBottomSheetState extends State<OverBottomSheet>
     final showHandle =
         widget.showDragHandle ?? bottomSheetTheme.showDragHandle ?? false;
 
-    void moveSheet({required double base, required double dy}) {
-      final ratio = _controller.value - dy / base;
-      _controller.updateRatio(ratio);
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
+        assert(_debugCheckConstraints(constraints));
+
         final sheetConstraints = _calculateConstraints(constraints);
         final base = sheetConstraints.maxHeight - sheetConstraints.minHeight;
-        final maxSnap = _sortedSnaps.last;
 
         // Ensure base is not zero to avoid division by zero
         if (base <= 0) {
@@ -484,77 +590,67 @@ class _OverBottomSheetState extends State<OverBottomSheet>
                 offset: Offset(0, (1 - value) * base),
                 child: child,
               ),
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onVerticalDragStart: (_) {
-                  _animationController?.stop();
-                  widget.onDragStart?.call();
-                },
-                onVerticalDragUpdate: (details) {
-                  // When handleNestedScroll is enabled:
-                  // - If at max position and content not at top, don't move sheet
-                  // - Otherwise, move sheet normally
-                  if (widget.handleNestedScroll &&
-                      _controller.value >= maxSnap &&
-                      !_isContentAtTop) {
-                    return;
-                  }
-                  moveSheet(base: base, dy: details.delta.dy);
-                },
-                onVerticalDragEnd: (details) {
-                  final velocity = details.primaryVelocity ?? 0;
-                  final currentValue = _controller.value;
-
-                  final targetSnap = calculateTargetSnap(
-                    currentValue: currentValue,
-                    velocity: velocity,
-                    velocityThreshold: widget.velocityThreshold,
-                    sortedSnaps: _sortedSnaps,
-                  );
-
-                  widget.onDragEnd?.call(targetSnap);
-                  _animateTo(targetSnap).then((_) {
-                    widget.onSnapComplete?.call(targetSnap);
-                  });
-                },
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: (notification) {
-                    if (widget.handleNestedScroll) {
-                      // Track if content is at the top
-                      _isContentAtTop = notification.metrics.pixels <= 0;
-                    }
-                    return false; // Don't consume the notification
-                  },
-                  child: Material(
-                    color:
-                        widget.backgroundColor ??
-                        bottomSheetTheme.backgroundColor ??
-                        theme.colorScheme.surfaceContainerLow,
-                    elevation:
-                        widget.elevation ?? bottomSheetTheme.elevation ?? 1.0,
-                    shadowColor:
-                        widget.shadowColor ??
-                        bottomSheetTheme.shadowColor ??
-                        Colors.transparent,
-                    surfaceTintColor:
-                        widget.surfaceTintColor ??
-                        bottomSheetTheme.surfaceTintColor ??
-                        Colors.transparent,
-                    shape: widget.shape ?? bottomSheetTheme.shape,
-                    clipBehavior:
-                        widget.clipBehavior ??
-                        bottomSheetTheme.clipBehavior ??
-                        Clip.none,
-                    child: ConstrainedBox(
-                      constraints: sheetConstraints,
-                      child: Column(
-                        children: [
-                          if (showHandle) _buildDragHandle(context),
-                          _header,
-                          Expanded(child: SizedBox.expand(child: _content)),
-                        ],
+              child: Material(
+                color:
+                    widget.backgroundColor ??
+                    bottomSheetTheme.backgroundColor ??
+                    theme.colorScheme.surfaceContainerLow,
+                elevation:
+                    widget.elevation ?? bottomSheetTheme.elevation ?? 1.0,
+                shadowColor:
+                    widget.shadowColor ??
+                    bottomSheetTheme.shadowColor ??
+                    Colors.transparent,
+                surfaceTintColor:
+                    widget.surfaceTintColor ??
+                    bottomSheetTheme.surfaceTintColor ??
+                    Colors.transparent,
+                shape: widget.shape ?? bottomSheetTheme.shape,
+                clipBehavior:
+                    widget.clipBehavior ??
+                    bottomSheetTheme.clipBehavior ??
+                    Clip.none,
+                child: ConstrainedBox(
+                  constraints: sheetConstraints,
+                  child: Column(
+                    children: [
+                      // The handle and the header always drag the sheet.
+                      // SizedBox keeps the drag area at the full sheet width
+                      // even when the header does not fill it.
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildDragTarget(
+                          base: base,
+                          nestedScrollAware: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (showHandle) _buildDragHandle(context),
+                              _header,
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      Expanded(
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (widget.handleNestedScroll &&
+                                notification.depth == 0 &&
+                                notification.metrics.axis == Axis.vertical) {
+                              // Track if content is at the top
+                              _isContentAtTop =
+                                  notification.metrics.pixels <= 0;
+                            }
+                            return false; // Don't consume the notification
+                          },
+                          child: _buildDragTarget(
+                            base: base,
+                            nestedScrollAware: true,
+                            child: SizedBox.expand(child: _content),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

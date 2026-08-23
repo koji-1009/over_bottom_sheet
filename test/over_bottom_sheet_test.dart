@@ -964,5 +964,395 @@ void main() {
       // Widget should render correctly
       expect(find.byType(OverBottomSheet), findsOneWidget);
     });
+
+    testWidgets('animateTo future completes when interrupted by animation', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 0.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      var completed = false;
+      controller.open().then((_) => completed = true);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // Interrupt the running animation with another one.
+      controller.animateTo(0.5);
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      expect(completed, true);
+      expect(controller.value, 0.5);
+    });
+
+    testWidgets('animateTo future completes when interrupted by drag', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 0.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      var completed = false;
+      controller.open().then((_) => completed = true);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // Interrupt the running animation with a drag.
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 40));
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      expect(completed, true);
+    });
+
+    testWidgets('onSnapComplete is not called when the animation is '
+        'interrupted', (tester) async {
+      double? snapRatio;
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              maxHeight: 500,
+              minHeight: 100,
+              snapPoints: const [0.0, 0.5, 1.0],
+              onSnapComplete: (ratio) => snapRatio = ratio,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.fling(
+        find.byType(OverBottomSheet),
+        const Offset(0, 100),
+        500,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // Interrupt the snap animation before it finishes.
+      controller.animateTo(1.0);
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      expect(snapRatio, isNull);
+      expect(controller.value, 1.0);
+    });
+
+    testWidgets('header drag moves the sheet even when content is not at top', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              handleNestedScroll: true,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50, child: Text('HEADER')),
+              content: ListView.builder(
+                controller: scrollController,
+                itemCount: 50,
+                itemBuilder: (context, index) =>
+                    SizedBox(height: 40, child: Text('item$index')),
+              ),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      // Scroll the content away from the top.
+      scrollController.jumpTo(120);
+      await tester.pump();
+
+      // Base: 500 - 100 = 400. Drag 200px -> ratio = 1.0 - (200/400) = 0.5
+      await tester.drag(find.text('HEADER'), const Offset(0, 200));
+      await tester.pump();
+
+      expect(controller.value, closeTo(0.5, 0.05));
+    });
+
+    testWidgets('horizontal scroll notifications do not block the drag', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              handleNestedScroll: true,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: Builder(
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      // A horizontal scrollable inside the content must not
+                      // be treated as the vertical content position.
+                      ScrollUpdateNotification(
+                        depth: 0,
+                        metrics: FixedScrollMetrics(
+                          minScrollExtent: 0,
+                          maxScrollExtent: 1000,
+                          pixels: 100,
+                          viewportDimension: 400,
+                          axisDirection: AxisDirection.right,
+                          devicePixelRatio: 1.0,
+                        ),
+                        context: context,
+                      ).dispatch(context);
+                    },
+                    child: Container(height: 450, color: Colors.blue),
+                  );
+                },
+              ),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(GestureDetector).last);
+      await tester.pump();
+
+      // Base: 500 - 100 = 400. Drag 160px -> ratio ~= 0.6
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 160));
+      await tester.pump();
+
+      expect(controller.value, closeTo(0.6, 0.1));
+    });
+
+    testWidgets('nested scroll notifications do not block the drag', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              controller: controller,
+              handleNestedScroll: true,
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: Builder(
+                builder: (context) {
+                  return GestureDetector(
+                    onTap: () {
+                      // depth > 0 means the notification bubbled up from an
+                      // inner scrollable, not from the content itself.
+                      ScrollUpdateNotification(
+                        depth: 1,
+                        metrics: FixedScrollMetrics(
+                          minScrollExtent: 0,
+                          maxScrollExtent: 1000,
+                          pixels: 100,
+                          viewportDimension: 400,
+                          axisDirection: AxisDirection.down,
+                          devicePixelRatio: 1.0,
+                        ),
+                        context: context,
+                      ).dispatch(context);
+                    },
+                    child: Container(height: 450, color: Colors.blue),
+                  );
+                },
+              ),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(GestureDetector).last);
+      await tester.pump();
+
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 160));
+      await tester.pump();
+
+      expect(controller.value, closeTo(0.6, 0.1));
+    });
+
+    testWidgets('snapPoints outside 0.0-1.0 are rejected', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: OverBottomSheet(
+              snapPoints: const [0.0, 1.5],
+              maxHeight: 500,
+              minHeight: 100,
+              header: const SizedBox(height: 50),
+              content: const SizedBox(),
+              child: const SizedBox(),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isAssertionError);
+    });
+
+    testWidgets('ratio height inside an unbounded parent reports an error', (
+      tester,
+    ) async {
+      final errors = <String>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = (details) =>
+          errors.add(details.exception.toString());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                OverBottomSheet(
+                  maxHeight: 0.5, // Ratio inside an unbounded height
+                  minHeight: 0.1,
+                  header: const SizedBox(height: 50),
+                  content: const SizedBox(),
+                  child: const SizedBox(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      FlutterError.onError = previousOnError;
+
+      expect(errors.first, contains('unbounded height'));
+    });
+
+    testWidgets('width ratio inside an unbounded parent reports an error', (
+      tester,
+    ) async {
+      final errors = <String>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = (details) =>
+          errors.add(details.exception.toString());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                OverBottomSheet(
+                  maxHeight: 500,
+                  minHeight: 100,
+                  width: 0.5, // Ratio inside an unbounded width
+                  header: const SizedBox(height: 50),
+                  content: const SizedBox(),
+                  child: const SizedBox(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      FlutterError.onError = previousOnError;
+
+      expect(errors.first, contains('unbounded width'));
+    });
+
+    testWidgets('toggling handleNestedScroll resets the content position', (
+      tester,
+    ) async {
+      final controller = OverBottomSheetController(ratio: 1.0);
+
+      Widget buildSheet({required bool handleNestedScroll}) => MaterialApp(
+        home: Scaffold(
+          body: OverBottomSheet(
+            controller: controller,
+            handleNestedScroll: handleNestedScroll,
+            maxHeight: 500,
+            minHeight: 100,
+            header: const SizedBox(height: 50),
+            content: Builder(
+              builder: (context) {
+                return GestureDetector(
+                  onTap: () {
+                    ScrollUpdateNotification(
+                      depth: 0,
+                      metrics: FixedScrollMetrics(
+                        minScrollExtent: 0,
+                        maxScrollExtent: 1000,
+                        pixels: 100, // NOT at top
+                        viewportDimension: 400,
+                        axisDirection: AxisDirection.down,
+                        devicePixelRatio: 1.0,
+                      ),
+                      context: context,
+                    ).dispatch(context);
+                  },
+                  child: Container(height: 450, color: Colors.blue),
+                );
+              },
+            ),
+            child: const SizedBox(),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(buildSheet(handleNestedScroll: true));
+      await tester.tap(find.byType(GestureDetector).last);
+      await tester.pump();
+
+      // The recorded content position blocks the drag.
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 100));
+      await tester.pump();
+      expect(controller.value, 1.0);
+
+      // Turning the option off and on again forgets the stale position.
+      await tester.pumpWidget(buildSheet(handleNestedScroll: false));
+      await tester.pumpWidget(buildSheet(handleNestedScroll: true));
+
+      // Base: 500 - 100 = 400. Drag 160px -> ratio ~= 0.6
+      await tester.drag(find.byType(OverBottomSheet), const Offset(0, 160));
+      await tester.pump();
+      expect(controller.value, closeTo(0.6, 0.1));
+    });
   });
 }

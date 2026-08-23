@@ -77,7 +77,7 @@ OverBottomSheet(
 
 ### Nested Scroll Handling
 
-Enable smooth scrolling inside the sheet content:
+While the sheet is fully open and its content is scrolled away from the top, dragging over the content does not move the sheet, so the content can be scrolled back first. The header and the drag handle always move the sheet.
 
 ```dart
 OverBottomSheet(
